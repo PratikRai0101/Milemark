@@ -108,6 +108,7 @@ struct ReceiptView: View {
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 8)
+        .accessibilityIdentifier("receipt-actions")
         .background {
             LinearGradient(
                 colors: [Theme.ground.opacity(0), Theme.ground],
@@ -180,7 +181,6 @@ struct ReceiptPaper: View {
     let comparisonRun: Run?
     let onTear: () -> Void
 
-    @State private var paperHeight: CGFloat = 0
     @State private var feedProgress: CGFloat = 0
 
     var body: some View {
@@ -206,30 +206,30 @@ struct ReceiptPaper: View {
         .foregroundStyle(Theme.paperInk)
         .shadow(color: .black.opacity(0.06), radius: 12, y: 6)
         .clipShape(SerratedBottomShape())
-        .background {
+        .mask {
+            // The reveal is measured from the paper itself, so it cannot be
+            // left showing a stale height.
             GeometryReader { proxy in
-                Color.clear
-                    .onAppear { paperHeight = proxy.size.height }
-                    .onChange(of: proxy.size.height) { _, newValue in paperHeight = newValue }
+                Rectangle()
+                    .frame(height: proxy.size.height * feedProgress)
+                    .overlay(alignment: .bottom) {
+                        // A contact shadow follows the exposed edge of the paper.
+                        LinearGradient(
+                            colors: [Color.black.opacity(0), Color.black.opacity(0.13)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 12)
+                        .offset(y: 6)
+                    }
             }
         }
-        .mask(alignment: .top) {
-            Rectangle()
-                .frame(height: paperHeight * feedProgress)
-                .overlay(alignment: .bottom) {
-                    // A contact shadow follows the exposed edge of the paper.
-                    LinearGradient(
-                        colors: [Color.black.opacity(0), Color.black.opacity(0.13)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 12)
-                    .offset(y: 6)
-                }
-        }
-        .onAppear {
-            feedProgress = 0
-            withAnimation(.linear(duration: 1.1)) { feedProgress = 1 }
+        .animation(.linear(duration: 1.1), value: feedProgress)
+        .task {
+            // The paper feeds out when the receipt first appears. Setting the
+            // value again if the view is rebuilt means the paper can never be
+            // left hidden behind the slot.
+            feedProgress = 1
         }
     }
 
@@ -414,37 +414,36 @@ struct ReceiptPaper: View {
     }
 
     private var tearGrip: some View {
-        Button {
-            onTear()
-        } label: {
-            HStack(spacing: 7) {
-                Image(systemName: "arrow.down")
-                    .font(.system(size: 11, weight: .semibold))
-                Text(tearProgress > 0.6 ? "Release to collect" : "Pull to tear")
-                    .font(.system(size: 11, design: .monospaced))
-            }
-            .foregroundStyle(Theme.paperSecondary)
-            .frame(maxWidth: .infinity)
-            .frame(height: 44)
-            .contentShape(Rectangle())
+        HStack(spacing: 7) {
+            Image(systemName: "arrow.down")
+                .font(.system(size: 11, weight: .semibold))
+            Text(tearProgress > 0.6 ? "Release to collect" : "Pull to tear")
+                .font(.system(size: 11, design: .monospaced))
         }
-        .buttonStyle(.plain)
+        .foregroundStyle(Theme.paperSecondary)
+        .frame(maxWidth: .infinity)
+        .frame(height: 44)
+        .contentShape(Rectangle())
         // The grip takes the drag before the scroll view can, so pulling the
-        // paper does not scroll the receipt instead.
+        // paper does not scroll the receipt instead. There is no tap action
+        // on the grip: a pull must never tear the receipt off by accident.
+        // The Tear off button in the action bar is the alternative.
         .highPriorityGesture(tearGesture)
+        .accessibilityAddTraits(.isButton)
         .accessibilityLabel("Pull to tear off this receipt")
         .accessibilityIdentifier("tear-grip")
         .accessibilityHint("Drag down, or activate, to collect this receipt")
+        .accessibilityAction { onTear() }
     }
 
     private var tearGesture: some Gesture {
         DragGesture(minimumDistance: 4)
             .onChanged { value in
                 // The paper follows the finger directly: no easing, no lag.
-                tearProgress = min(1, max(0, value.translation.height / 90))
+                tearProgress = TearRule.progress(for: value.translation.height)
             }
             .onEnded { value in
-                if value.translation.height > 72 {
+                if TearRule.shouldTear(translation: value.translation.height) {
                     tearProgress = 1
                     onTear()
                 } else {
