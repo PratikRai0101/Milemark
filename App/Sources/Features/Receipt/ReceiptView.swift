@@ -22,10 +22,19 @@ struct ReceiptView: View {
     @State private var showShare = false
     @State private var showGraphicPicker = false
     @State private var photoItem: PhotosPickerItem?
+    @State private var showsShare = false
 
     init(run: Run) {
         self.run = run
         _isCollected = State(initialValue: run.isCollected)
+        // -graphic=ascii|pace|photo opens the receipt in a given treatment,
+        // for screenshots and UI checks.
+        if let requested = ProcessInfo.processInfo.arguments
+            .first(where: { $0.hasPrefix("-graphic=") })?
+            .replacingOccurrences(of: "-graphic=", with: ""),
+           let requested = ReceiptGraphic(rawValue: requested) {
+            _graphic = State(initialValue: requested)
+        }
     }
 
     var body: some View {
@@ -61,6 +70,18 @@ struct ReceiptView: View {
         }
         .sheet(isPresented: $showShare) {
             SharePreviewView(run: run)
+        }
+        .task {
+            // -showShare opens the share preview directly.
+            if ProcessInfo.processInfo.arguments.contains("-showShare") {
+                showsShare = true
+            }
+        }
+        .onChange(of: showsShare) { _, isShowing in
+            if isShowing {
+                showShare = true
+                showsShare = false
+            }
         }
     }
 
