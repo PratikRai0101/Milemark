@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// The share preview.
 ///
@@ -14,6 +15,8 @@ struct SharePreviewView: View {
 
     @State private var trimsEnds = true
     @State private var includesNote = true
+    @State private var exportedFile: URL?
+    @State private var isExporting = false
     @Environment(\.dismiss) private var dismiss
 
     private var displayedPoints: [RoutePoint] {
@@ -26,6 +29,7 @@ struct SharePreviewView: View {
                 VStack(spacing: 0) {
                     preview
                     options
+                    export
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
@@ -43,7 +47,65 @@ struct SharePreviewView: View {
         }
     }
 
-    private var preview: some View {
+    /// Exports the preview as a PNG and offers the system share sheet.
+    private var export: some View {
+        VStack(spacing: 10) {
+            if let exportedFile {
+                ShareLink(item: exportedFile) {
+                    Label("Share receipt image", systemImage: "square.and.arrow.up")
+                }
+                .font(Theme.Font.action)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background(Theme.ink, in: Capsule())
+                .foregroundStyle(Theme.ground)
+            } else {
+                Button {
+                    isExporting = true
+                    exportedFile = writeImage()
+                    isExporting = false
+                } label: {
+                    if isExporting {
+                        ProgressView().tint(Theme.ground)
+                    } else {
+                        Label("Prepare receipt image", systemImage: "photo")
+                    }
+                }
+                .buttonStyle(PrimaryActionStyle())
+            }
+
+            Text("The image contains only what is shown above: the route, the three values and the optional note. No date, time or location.")
+                .font(.system(size: 11))
+                .foregroundStyle(Theme.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.top, 22)
+    }
+
+    /// Renders the preview card and writes it to a temporary PNG.
+    ///
+    /// The file lives in the temporary directory and is never uploaded
+    /// anywhere by the app itself: it is handed to the system share sheet and
+    /// the user decides where it goes.
+    private func writeImage() -> URL? {
+        let renderer = ImageRenderer(content: previewCard)
+        renderer.scale = 3
+        renderer.proposedSize = ProposedViewSize(width: 340, height: 480)
+        guard let image = renderer.uiImage, let data = image.pngData() else { return nil }
+        let directory = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appending(path: "Milemark", directoryHint: .isDirectory)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = directory.appending(path: "run-receipt-\(run.id.uuidString).png")
+        do {
+            try data.write(to: file, options: .atomic)
+            return file
+        } catch {
+            return nil
+        }
+    }
+
+    /// The card that is actually exported, with no app chrome around it.
+    private var previewCard: some View {
         VStack(spacing: 0) {
             Text("A ROUTE WORTH KEEPING")
                 .font(.system(size: 11, design: .monospaced))
@@ -100,7 +162,11 @@ struct SharePreviewView: View {
             RoundedRectangle(cornerRadius: 2, style: .continuous)
                 .stroke(Theme.rule, lineWidth: 1)
         }
-        .padding(.top, 8)
+    }
+
+    private var preview: some View {
+        previewCard
+            .padding(.top, 8)
     }
 
     private func stat(_ value: String, _ label: String) -> some View {
