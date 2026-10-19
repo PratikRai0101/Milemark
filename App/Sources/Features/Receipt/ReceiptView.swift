@@ -22,6 +22,8 @@ struct ReceiptView: View {
     @State private var showShare = false
     @State private var showGraphicPicker = false
     @State private var photoItem: PhotosPickerItem?
+    @State private var viewportHeight: CGFloat = 0
+    @State private var gripBottom: CGFloat = 0
 
     init(run: Run) {
         self.run = run
@@ -48,6 +50,7 @@ struct ReceiptView: View {
                     tearProgress: $tearProgress,
                     photoItem: $photoItem,
                     comparisonRun: store.similarRun(to: run),
+                    isAtEnd: isAtEnd,
                     onTear: { tearOff() }
                 )
                 .rotationEffect(.degrees(tearProgress * 3))
@@ -57,6 +60,15 @@ struct ReceiptView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 120)
         }
+        .background {
+            GeometryReader { proxy in
+                Color.clear
+                    .onAppear { viewportHeight = proxy.size.height }
+                    .onChange(of: proxy.size.height) { _, newValue in viewportHeight = newValue }
+            }
+        }
+        .coordinateSpace(name: "receipt-scroll")
+        .onPreferenceChange(GripPositionKey.self) { gripBottom = $0 }
         .background(Theme.ground)
         .scrollIndicators(.hidden)
         .navigationTitle("Run receipt")
@@ -77,6 +89,16 @@ struct ReceiptView: View {
                 showShare = true
             }
         }
+    }
+
+    /// Whether the receipt has been scrolled to the end.
+    ///
+    /// The tear only engages here: at the end of the paper a pull down
+    /// cannot be a scroll, so there is no ambiguity about what the gesture
+    /// means.
+    private var isAtEnd: Bool {
+        guard viewportHeight > 0 else { return true }
+        return gripBottom <= viewportHeight + 24
     }
 
     // MARK: - Actions
@@ -179,9 +201,13 @@ struct ReceiptPaper: View {
     @Binding var photoItem: PhotosPickerItem?
     /// The last time the same route was run, when there was one.
     let comparisonRun: Run?
+    /// Whether the receipt has been scrolled to the end of the paper.
+    let isAtEnd: Bool
     let onTear: () -> Void
 
     @State private var feedProgress: CGFloat = 0
+    @State private var isPulling = false
+    @State private var tearArmed = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -415,9 +441,9 @@ struct ReceiptPaper: View {
 
     private var tearGrip: some View {
         HStack(spacing: 7) {
-            Image(systemName: "arrow.down")
+            Image(systemName: isAtEnd ? "arrow.down" : "arrow.down.right")
                 .font(.system(size: 11, weight: .semibold))
-            Text(tearProgress > 0.6 ? "Release to collect" : "Pull to tear")
+            Text(gripTitle)
                 .font(.system(size: 11, design: .monospaced))
         }
         .foregroundStyle(Theme.paperSecondary)
@@ -430,19 +456,43 @@ struct ReceiptPaper: View {
         // The Tear off button in the action bar is the alternative.
         .highPriorityGesture(tearGesture)
         .accessibilityAddTraits(.isButton)
-        .accessibilityLabel("Pull to tear off this receipt")
+        .accessibilityLabel(gripTitle)
         .accessibilityIdentifier("tear-grip")
-        .accessibilityHint("Drag down, or activate, to collect this receipt")
+        .accessibilityHint("Scroll to the end of the receipt, then drag down to collect it")
         .accessibilityAction { onTear() }
+        .background {
+            // Where the grip sits in the receipt, so the tear only engages
+            // once the receipt has been scrolled to the end.
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: GripPositionKey.self,
+                    value: proxy.frame(in: .named("receipt-scroll")).maxY
+                )
+            }
+        }
+    }
+
+    private var gripTitle: String {
+        if !isAtEnd { return "Scroll to the end to tear" }
+        return tearProgress > 0.6 ? "Release to collect" : "Pull to tear"
     }
 
     private var tearGesture: some Gesture {
         DragGesture(minimumDistance: 4)
             .onChanged { value in
+                // The tear is armed when the pull starts, at the end of the
+                // paper. The scroll view bounces a little at the end of its
+                // travel, and the pull must not be cancelled by that.
+                if !isPulling {
+                    isPulling = true
+                    tearArmed = isAtEnd
+                }
                 // The paper follows the finger directly: no easing, no lag.
-                tearProgress = TearRule.progress(for: value.translation.height)
+                tearProgress = tearArmed ? TearRule.progress(for: value.translation.height) : 0
             }
             .onEnded { value in
+                defer { isPulling = false }
+                guard tearArmed else { return }
                 if TearRule.shouldTear(translation: value.translation.height) {
                     tearProgress = 1
                     onTear()
@@ -453,6 +503,14 @@ struct ReceiptPaper: View {
                     }
                 }
             }
+    }
+}
+
+/// Reports where the tear grip sits inside the receipt.
+struct GripPositionKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
