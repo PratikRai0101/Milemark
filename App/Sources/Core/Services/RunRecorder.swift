@@ -48,7 +48,6 @@ public final class RunRecorder: NSObject {
     private let manager = CLLocationManager()
     private var lastAccepted: RoutePoint?
     private var lastResumedAt: Date?
-    private var accumulatedMovingTime: TimeInterval = 0
     private var lastTick: Date?
     private var altitudeBaseline: Double?
 
@@ -98,7 +97,6 @@ public final class RunRecorder: NSObject {
             distanceMeters = 0
             movingTime = 0
             elapsedTime = 0
-            accumulatedMovingTime = 0
             elevationGainMeters = 0
             altitudeBaseline = nil
         } else {
@@ -138,7 +136,6 @@ public final class RunRecorder: NSObject {
         startedAt = nil
         lastAccepted = nil
         lastResumedAt = nil
-        accumulatedMovingTime = 0
         lastTick = nil
         altitudeBaseline = nil
         lastError = nil
@@ -155,7 +152,7 @@ public final class RunRecorder: NSObject {
         self.lastTick = now
         guard phase == .recording else { return }
         elapsedTime += delta
-        accumulatedMovingTime += delta
+        movingTime += delta
     }
 
     // MARK: - Metric helpers
