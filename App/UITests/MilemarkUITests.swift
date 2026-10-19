@@ -2,6 +2,7 @@ import XCTest
 
 /// End-to-end tests for the interactions that a screenshot cannot show:
 /// opening a receipt, changing the graphic, pulling the paper, and sharing.
+@MainActor
 final class MilemarkUITests: XCTestCase {
     private var app: XCUIApplication!
 
@@ -22,6 +23,32 @@ final class MilemarkUITests: XCTestCase {
     @discardableResult
     private func waitFor(_ element: XCUIElement, _ timeout: TimeInterval = 20) -> Bool {
         element.waitForExistence(timeout: timeout)
+    }
+
+    /// Finds the tear grip wherever it sits in the tree.
+    private var tearGrip: XCUIElement {
+        app.descendants(matching: .any)
+            .matching(identifier: "tear-grip")
+            .firstMatch
+    }
+
+    /// Scrolls the receipt to the end, where the tear grip sits.
+    ///
+    /// At the end of the paper there is nothing left to scroll, so a pull
+    /// down is unambiguously a pull on the paper rather than a scroll.
+    @discardableResult
+    private func scrollToTearGrip() -> Bool {
+        let bar = app.descendants(matching: .any)
+            .matching(identifier: "receipt-actions")
+            .firstMatch
+        for _ in 0..<12 {
+            let grip = tearGrip
+            guard grip.exists else { return false }
+            let clearOfBar = !bar.exists || grip.frame.maxY <= bar.frame.minY
+            if clearOfBar, grip.frame.minY > 120, grip.isHittable { return true }
+            app.scrollViews.firstMatch.swipeUp()
+        }
+        return false
     }
 
     func testArchiveOpensAReceipt() {
@@ -61,16 +88,32 @@ final class MilemarkUITests: XCTestCase {
         route.tap()
         XCTAssertTrue(waitFor(app.staticTexts["Run receipt"]))
 
-        let grip = button(startingWith: "Pull to tear off")
+        let grip = tearGrip
         XCTAssertTrue(waitFor(grip))
+        XCTAssertTrue(scrollToTearGrip())
         let start = grip.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         let end = start.withOffset(CGVector(dx: 0, dy: 20))
-        start.press(forDuration: 0.2, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.1)
+        start.press(forDuration: 0.2, thenDragTo: end)
 
-        try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "/tmp/ui-tear-short.png"))
-        // Released short of the threshold, the receipt is still on screen.
+        // Released short of the threshold, the receipt is still on screen and
+        // the grip is still there to pull again.
         XCTAssertTrue(app.staticTexts["Run receipt"].exists)
         XCTAssertTrue(app.staticTexts["INTERVAL"].exists)
+        XCTAssertTrue(tearGrip.exists)
+    }
+
+    func testTearingOffCollectsTheReceipt() {
+        let route = button(startingWith: "Interval")
+        XCTAssertTrue(waitFor(route))
+        route.tap()
+        XCTAssertTrue(waitFor(app.staticTexts["Run receipt"]))
+
+        let tear = button(startingWith: "Tear off")
+        XCTAssertTrue(waitFor(tear))
+        tear.tap()
+
+        // The receipt is collected and the archive returns.
+        XCTAssertTrue(waitFor(app.staticTexts["MILEMARK"]))
     }
 
     func testPullingThePaperPastTheThresholdCollectsIt() {
@@ -79,11 +122,12 @@ final class MilemarkUITests: XCTestCase {
         route.tap()
         XCTAssertTrue(waitFor(app.staticTexts["Run receipt"]))
 
-        let grip = button(startingWith: "Pull to tear off")
+        let grip = tearGrip
         XCTAssertTrue(waitFor(grip))
+        XCTAssertTrue(scrollToTearGrip())
         let start = grip.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        let end = start.withOffset(CGVector(dx: 0, dy: 160))
-        start.press(forDuration: 0.2, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.1)
+        let end = start.withOffset(CGVector(dx: 0, dy: 100))
+        start.press(forDuration: 0.2, thenDragTo: end)
 
         // Past the threshold the receipt is collected and the archive returns.
         XCTAssertTrue(waitFor(app.staticTexts["MILEMARK"]))
