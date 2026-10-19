@@ -37,6 +37,13 @@ public final class RunStore {
         self.decoder = decoder
 
         load()
+
+        // Launching with -seedDemoData gives screenshots and UI checks
+        // something to look at without needing a recorded run.
+        if ProcessInfo.processInfo.arguments.contains("-seedDemoData") {
+            runs = DemoActivity.all()
+            save()
+        }
     }
 
     // MARK: - Persistence
@@ -84,6 +91,12 @@ public final class RunStore {
 
     public func delete(runID: UUID) {
         runs.removeAll { $0.id == runID }
+        save()
+    }
+
+    /// Loads the sample activities, replacing anything already stored.
+    public func loadSampleActivities() {
+        runs = DemoActivity.all()
         save()
     }
 
