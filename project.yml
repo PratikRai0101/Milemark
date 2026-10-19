@@ -53,6 +53,19 @@ targets:
     dependencies:
       - target: Milemark
 
+  MilemarkUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: App/UITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.milemark.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Milemark
+    dependencies:
+      - target: Milemark
+
 schemes:
   Milemark:
     build:
@@ -66,3 +79,4 @@ schemes:
       gatherCoverageData: false
       targets:
         - MilemarkTests
+        - MilemarkUITests
