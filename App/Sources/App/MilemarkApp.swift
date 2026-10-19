@@ -45,5 +45,12 @@ struct RootView: View {
         }
         .toolbarBackground(Theme.ground, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
+        .task {
+            // -showRecord opens the tracking screen, for screenshots and UI
+            // checks that need to start there.
+            if ProcessInfo.processInfo.arguments.contains("-showRecord") {
+                selection = .record
+            }
+        }
     }
 }

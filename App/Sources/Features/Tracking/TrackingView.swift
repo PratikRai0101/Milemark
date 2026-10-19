@@ -13,7 +13,6 @@ struct TrackingView: View {
     @Environment(RunRecorder.self) private var recorder
     @Environment(\.scenePhase) private var scenePhase
 
-    @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var followsRunner = true
     @State private var isReviewing = false
     @State private var draftTitle = ""
@@ -33,6 +32,14 @@ struct TrackingView: View {
         .toolbarBackground(Theme.ground, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .task { recorder.prepare() }
+        .task {
+            // -startRecording begins a run immediately, so screenshots and UI
+            // checks can exercise the tracking screen without a tap.
+            if ProcessInfo.processInfo.arguments.contains("-startRecording"),
+               recorder.phase == .ready {
+                recorder.start()
+            }
+        }
         .onReceive(ticker) { now in
             tick = now
             recorder.tick(now: now)
@@ -71,32 +78,12 @@ struct TrackingView: View {
     // MARK: - Map
 
     private var map: some View {
-        Map(position: $cameraPosition) {
-            MapPolyline(coordinates: recorder.points.map(\.coordinate))
-                .stroke(Theme.signal, style: StrokeStyle(lineWidth: 4.5, lineCap: .round, lineJoin: .round))
-            if let start = recorder.points.first {
-                Annotation("", coordinate: start.coordinate) {
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 11, height: 11)
-                        .overlay(Circle().stroke(Theme.signal, lineWidth: 2.5))
-                }
-            }
-            if let current = recorder.currentCoordinate {
-                Annotation("", coordinate: current) {
-                    ZStack {
-                        Circle().fill(Theme.signal.opacity(0.18)).frame(width: 22, height: 22)
-                        Circle().fill(Theme.signal).frame(width: 11, height: 11)
-                            .overlay(Circle().stroke(.white, lineWidth: 2))
-                    }
-                }
-            }
-        }
-        .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll, showsTraffic: false))
-        .mapControls {
-            MapUserLocationButton()
-            MapCompass()
-        }
+        TrackingMapView(
+            points: recorder.points,
+            currentCoordinate: recorder.currentCoordinate,
+            followsRunner: followsRunner,
+            onUserInteraction: { followsRunner = false }
+        )
         .overlay(alignment: .topLeading) {
             Text(placeLabel)
                 .font(Theme.Font.label)
@@ -110,7 +97,6 @@ struct TrackingView: View {
             if !followsRunner {
                 Button {
                     followsRunner = true
-                    recentre()
                 } label: {
                     Image(systemName: "location.fill")
                         .font(.system(size: 16, weight: .semibold))
@@ -120,20 +106,6 @@ struct TrackingView: View {
                 .accessibilityLabel("Recentre map")
                 .padding(14)
             }
-        }
-        .onMapCameraChange(frequency: .onEnd) { _ in
-            followsRunner = false
-        }
-        .onChange(of: recorder.currentCoordinate?.latitude) { _, _ in
-            guard followsRunner, let coordinate = recorder.currentCoordinate else { return }
-            cameraPosition = .camera(
-                MapCamera(
-                    centerCoordinate: coordinate,
-                    distance: 900,
-                    heading: 0,
-                    pitch: 0
-                )
-            )
         }
         .frame(maxHeight: .infinity)
     }
@@ -148,8 +120,7 @@ struct TrackingView: View {
     }
 
     private func recentre() {
-        guard let coordinate = recorder.currentCoordinate else { return }
-        cameraPosition = .camera(MapCamera(centerCoordinate: coordinate, distance: 900, heading: 0, pitch: 0))
+        followsRunner = true
     }
 
     // MARK: - Controls
