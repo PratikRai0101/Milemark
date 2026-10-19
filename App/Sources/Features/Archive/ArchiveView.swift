@@ -20,6 +20,10 @@ struct ArchiveView: View {
                     emptyState
                         .padding(.top, 40)
                 } else {
+                    if store.runs.allSatisfy({ $0.source == .imported }) {
+                        sampleNotice
+                            .padding(.top, 14)
+                    }
                     LazyVGrid(columns: columns, spacing: 11) {
                         ForEach(store.runs) { run in
                             Button {
@@ -41,7 +45,7 @@ struct ArchiveView: View {
         .navigationTitle("MILEMARK")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .principal) {
                 Text("MILEMARK")
                     .font(Theme.Font.archiveTitle)
                     .foregroundStyle(Theme.ink)
@@ -61,11 +65,20 @@ struct ArchiveView: View {
         .navigationDestination(item: $selectedRun) { run in
             ReceiptView(run: run)
         }
+        .task {
+            // -openReceipt opens the first stored run directly, which gives
+            // screenshots and UI checks something to look at.
+            if ProcessInfo.processInfo.arguments.contains("-openReceipt"),
+               selectedRun == nil,
+               let first = store.runs.first {
+                selectedRun = first
+            }
+        }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text("STRAVA IMPORT · DEMO DATA")
+            Text("SAMPLE ACTIVITIES · DEMO DATA")
                 .font(Theme.Font.label)
                 .foregroundStyle(Theme.secondary)
             HStack {
@@ -77,6 +90,27 @@ struct ArchiveView: View {
             .foregroundStyle(Theme.secondary)
             .padding(.top, 14)
         }
+    }
+
+    private var sampleNotice: some View {
+        Button {
+            store.loadSampleActivities()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "square.and.arrow.down")
+                Text("Load sample activities")
+                Spacer()
+                Text("9 runs")
+            }
+            .font(Theme.Font.label)
+            .foregroundStyle(Theme.secondary)
+            .padding(.horizontal, 12)
+            .frame(height: 44)
+            .background(Theme.tile, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .pressable()
+        .accessibilityHint("Replaces the stored runs with fictional sample activities")
     }
 
     private var emptyState: some View {
@@ -103,6 +137,19 @@ struct ArchiveView: View {
             }
             .buttonStyle(.plain)
             .pressable()
+
+            Button {
+                store.loadSampleActivities()
+            } label: {
+                Text("Load sample activities")
+                    .font(Theme.Font.action)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(Theme.tile, in: Capsule())
+                    .foregroundStyle(Theme.ink)
+            }
+            .buttonStyle(.plain)
+            .pressable()
         }
         .padding(.horizontal, 12)
     }
@@ -118,6 +165,7 @@ private struct RunTile: View {
                 Text(run.startedAt, format: .dateTime.weekday(.abbreviated))
                 Spacer()
                 Text(run.startedAt, format: .dateTime.day())
+                    .accessibilityLabel(run.startedAt.formatted(.dateTime.day().month(.abbreviated)))
             }
             .font(Theme.Font.label)
             .foregroundStyle(Theme.secondary)
