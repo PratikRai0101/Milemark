@@ -74,8 +74,7 @@ public enum DemoActivity {
             paceSecondsPerKm: 341,
             elevationGain: 24,
             heartRate: 148
-        ),
-        Recipe(
+        ),        Recipe(
             title: "Long run",
             note: "Slow and steady. Watched the sun come up over the basin.",
             daysAgo: 11,
@@ -98,7 +97,7 @@ public enum DemoActivity {
         Recipe(
             title: "Park loop",
             daysAgo: 15,
-            loopIndex: 1,
+            loopIndex: 5,
             distanceKilometres: 6.5,
             paceSecondsPerKm: 353,
             elevationGain: 31,

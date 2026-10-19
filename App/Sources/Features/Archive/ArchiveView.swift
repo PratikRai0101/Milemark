@@ -78,6 +78,14 @@ struct ArchiveView: View {
                let first = store.runs.first {
                 selectedRun = first
             }
+            // -openRun=<id> opens a particular stored run.
+            if let requested = ProcessInfo.processInfo.arguments
+                .first(where: { $0.hasPrefix("-openRun=") })?
+                .replacingOccurrences(of: "-openRun=", with: ""),
+               let index = Int(requested),
+               index < store.runs.count {
+                selectedRun = store.runs[index]
+            }
         }
     }
 

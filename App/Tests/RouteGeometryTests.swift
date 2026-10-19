@@ -132,4 +132,45 @@ final class RouteGeometryTests: XCTestCase {
         XCTAssertEqual(Format.duration(12_265), "03:24:25")
         XCTAssertEqual(Format.duration(278), "04:38")
     }
+
+    func testTheSameRouteIsSimilarToItself() {
+        let points = (0..<40).map { index in
+            point(1.3000 + Double(index) * 0.0002, 103.8000 + Double(index % 7) * 0.0001)
+        }
+        XCTAssertEqual(RouteGeometry.similarity(points, points), 1, accuracy: 0.001)
+    }
+
+    func testADifferentRouteIsNotSimilar() {
+        let first = (0..<40).map { index in
+            point(1.3000 + Double(index) * 0.0002, 103.8000)
+        }
+        let second = (0..<40).map { index in
+            point(1.3000, 103.8000 + Double(index) * 0.0002)
+        }
+        XCTAssertLessThan(RouteGeometry.similarity(first, second), 0.7)
+    }
+
+    func testResamplingGivesTheSameNumberOfPoints() {
+        let sparse = (0..<5).map { index in point(1.30 + Double(index) * 0.001, 103.80) }
+        let dense = (0..<200).map { index in point(1.30 + Double(index) * 0.000025, 103.80) }
+        XCTAssertEqual(RouteGeometry.resampled(sparse, count: 32).count, 32)
+        XCTAssertEqual(RouteGeometry.resampled(dense, count: 32).count, 32)
+        // The same road sampled at different rates still matches.
+        XCTAssertGreaterThan(RouteGeometry.similarity(sparse, dense), 0.95)
+    }
+
+    func testTheSameLoopWithADifferentNumberOfLapsStillMatches() {
+        // One lap of a square.
+        let lap: [RoutePoint] = [
+            point(1.3000, 103.8000),
+            point(1.3000, 103.8010),
+            point(1.3010, 103.8010),
+            point(1.3010, 103.8000),
+            point(1.3000, 103.8000)
+        ]
+        // Eight laps, then nine: the same route, sampled out of step.
+        let eight = Array(repeating: lap, count: 8).flatMap { $0 }
+        let nine = Array(repeating: lap, count: 9).flatMap { $0 }
+        XCTAssertGreaterThan(RouteGeometry.similarity(eight, nine), 0.95)
+    }
 }
