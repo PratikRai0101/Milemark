@@ -205,7 +205,7 @@ struct SharePreviewView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 12)
 
-            Text("Preview only. No file is exported or sent.")
+            Text("Nothing is sent unless you choose to share it.")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
