@@ -182,7 +182,7 @@ struct TrackingView: View {
         case .idle: "READY"
         case .ready: "READY"
         case .recording: "RECORDING"
-        case .paused: "PAUSED"
+        case .paused: recorder.isAutoPaused ? "AUTO-PAUSED" : "PAUSED"
         case .finished: "COLLECTED"
         }
     }
@@ -191,7 +191,10 @@ struct TrackingView: View {
         switch recorder.phase {
         case .idle, .ready: "Start when you are ready. The route records as you run."
         case .recording: "Recording. Pause if you stop."
-        case .paused: "Paused. Resume, or finish and review."
+        case .paused:
+            recorder.isAutoPaused
+                ? "Paused because you stopped. Resume when you start again."
+                : "Paused. Resume, or finish and review."
         case .finished: "Run saved. Start another whenever you like."
         }
     }

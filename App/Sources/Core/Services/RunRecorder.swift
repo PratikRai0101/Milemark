@@ -42,6 +42,8 @@ public final class RunRecorder: NSObject {
     public private(set) var locationStatus: LocationStatus = .unknown
     public private(set) var startedAt: Date?
     public private(set) var lastError: String?
+    /// Whether the recorder paused itself because the runner stopped moving.
+    public private(set) var isAutoPaused = false
 
     // MARK: - Dependencies
 
@@ -50,6 +52,8 @@ public final class RunRecorder: NSObject {
     private var lastResumedAt: Date?
     private var lastTick: Date?
     private var altitudeBaseline: Double?
+    /// When the runner last moved far enough to count as running.
+    private var lastMovementAt: Date?
 
     // MARK: - Init
 
@@ -115,6 +119,7 @@ public final class RunRecorder: NSObject {
         guard phase == .recording else { return }
         tick()
         phase = .paused
+        isAutoPaused = false
     }
 
     public func resume() {
@@ -139,6 +144,8 @@ public final class RunRecorder: NSObject {
         lastTick = nil
         altitudeBaseline = nil
         lastError = nil
+        isAutoPaused = false
+        lastMovementAt = nil
     }
 
     /// Advances the clock. Called by the tracking view's timer so the numbers
@@ -153,6 +160,7 @@ public final class RunRecorder: NSObject {
         guard phase == .recording else { return }
         elapsedTime += delta
         movingTime += delta
+        checkForAutoPause(now: now)
     }
 
     // MARK: - Metric helpers
@@ -168,21 +176,31 @@ public final class RunRecorder: NSObject {
 
     // MARK: - Sample handling
 
-    private func ingest(_ locations: [CLLocation]) {
+    /// Absorbs a batch of location samples.
+    func ingest(_ locations: [CLLocation]) {
         for location in locations {
-            let point = RoutePoint(location: location)
+            ingest([RoutePoint(location: location)])
+        }
+    }
+
+    /// Absorbs a batch of samples.
+    ///
+    /// Internal rather than private so the recorder's decisions can be tested
+    /// directly, without a live location feed.
+    func ingest(_ samples: [RoutePoint]) {
+        for point in samples {
             currentCoordinate = point.coordinate
             currentSpeedMetersPerSecond = point.speed
 
             guard phase == .recording else { continue }
             guard RouteGeometry.isAcceptable(point) else {
-                if location.horizontalAccuracy < 0 {
+                if point.horizontalAccuracy < 0 {
                     locationStatus = .weak
                 }
                 continue
             }
 
-            locationStatus = location.horizontalAccuracy <= 15 ? .good : .weak
+            locationStatus = point.horizontalAccuracy <= 15 ? .good : .weak
 
             if let previous = lastAccepted {
                 let delta = point.timestamp.timeIntervalSince(previous.timestamp)
@@ -213,6 +231,9 @@ public final class RunRecorder: NSObject {
                 }
 
                 distanceMeters += step
+                if step > 5 {
+                    lastMovementAt = point.timestamp
+                }
                 if let baseline = altitudeBaseline {
                     let deltaAltitude = point.altitude - baseline
                     if deltaAltitude > 1 { elevationGainMeters += deltaAltitude }
@@ -227,6 +248,31 @@ public final class RunRecorder: NSObject {
             lastAccepted = point
             points.append(point)
         }
+    }
+
+    /// Pauses the run when the runner has stopped moving.
+    ///
+    /// A runner who stops at a crossing should not have to reach for the
+    /// phone. The test is deliberately slow: the runner has to stay still
+    /// for a while, and the run has to have covered some ground first, so
+    /// a brief pause at traffic lights is not mistaken for a stop.
+    private func checkForAutoPause(now: Date = .now) {
+        guard phase == .recording, !isAutoPaused else { return }
+        guard distanceMeters > 20 else { return }
+        guard let lastMovementAt else {
+            self.lastMovementAt = now
+            return
+        }
+        let stillFor = now.timeIntervalSince(lastMovementAt)
+        guard stillFor > 12 else { return }
+        // A sample that says the runner is still moving cancels the pause.
+        guard currentSpeedMetersPerSecond < 1.0 else {
+            self.lastMovementAt = now
+            return
+        }
+        tick(now: now)
+        phase = .paused
+        isAutoPaused = true
     }
 
     private func refreshStatus() {
