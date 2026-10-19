@@ -22,7 +22,6 @@ struct ReceiptView: View {
     @State private var showShare = false
     @State private var showGraphicPicker = false
     @State private var photoItem: PhotosPickerItem?
-    @State private var showsShare = false
 
     init(run: Run) {
         self.run = run
@@ -74,13 +73,7 @@ struct ReceiptView: View {
         .task {
             // -showShare opens the share preview directly.
             if ProcessInfo.processInfo.arguments.contains("-showShare") {
-                showsShare = true
-            }
-        }
-        .onChange(of: showsShare) { _, isShowing in
-            if isShowing {
                 showShare = true
-                showsShare = false
             }
         }
     }
