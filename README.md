@@ -63,6 +63,26 @@ xcodebuild -project Milemark.xcodeproj -scheme Milemark \
 wrong number rather than a crash: distance accumulation, sample rejection,
 splits, pace formatting, route normalisation and endpoint trimming.
 
+## Sample activities
+
+The archive can load nine sample activities so a receipt can be seen before
+recording a run of your own. Their routes are **real street loops** — genuine
+closed circuits in the OpenStreetMap data bundled in `design/assets`, found by
+`design/make-demo-routes.swift`. They are not recordings of anyone's run, and
+the archive header says the data is demo data.
+
+Two launch arguments help when capturing screenshots or driving the UI:
+
+```sh
+# seed the samples and open the first receipt
+xcrun simctl launch booted app.milemark.app -seedDemoData -openReceipt
+```
+
+## Continuous integration
+
+GitHub Actions builds the app and runs the tests on every push and pull
+request.
+
 ## Design
 
 The visual direction is documented in [`design/`](design/):
