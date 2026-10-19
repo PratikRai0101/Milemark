@@ -85,11 +85,15 @@ struct RouteTraceView: View {
 }
 
 /// The same track, printed as a field of characters.
+///
+/// The whole area is printed in a pale character field, and the characters
+/// the route passes through are printed in full ink. The shape of the run is
+/// therefore readable at a glance, the way a printed map is.
 struct ASCIITraceView: View {
     let run: Run
 
-    private let columns = 35
-    private let rows = 24
+    private let columns = 33
+    private let rows = 22
 
     var body: some View {
         Canvas { context, size in
@@ -99,26 +103,35 @@ struct ASCIITraceView: View {
             )
             guard run.points.count > 1 else { return }
             let normalised = RouteGeometry.normalisedPoints(run.points)
-            guard let frame = RouteProjection.frame(for: normalised, in: size) else { return }
+            guard let frame = RouteProjection.frame(for: normalised, in: size, inset: 0.86) else { return }
 
             let cellWidth = size.width / CGFloat(columns)
+            let cellHeight = size.height / CGFloat(rows)
+            let letters = Array("RUN")
+            // The printed field reaches a little beyond the route, so the map
+            // has an edge rather than bleeding into the paper.
+            let field = frame.insetBy(dx: -cellWidth * 1.6, dy: -cellHeight * 1.6)
 
             for row in 0..<rows {
                 for column in 0..<columns {
                     let centre = CGPoint(
-                        x: frame.minX + (CGFloat(column) + 0.5) / CGFloat(columns) * frame.width,
-                        y: frame.maxY - (CGFloat(row) + 0.5) / CGFloat(rows) * frame.height
+                        x: (CGFloat(column) + 0.5) * cellWidth,
+                        y: (CGFloat(row) + 0.5) * cellHeight
                     )
+                    // The whole area the route occupies is printed in a pale
+                    // field, and the route is printed over it in full ink, so
+                    // the shape reads the way a printed map does.
+                    let inField = field.contains(centre)
+                    guard inField else { continue }
+
                     let onRoute = normalised.contains { point in
                         let location = RouteProjection.location(for: point, in: frame)
-                        return hypot(location.x - centre.x, location.y - centre.y) < cellWidth * 0.7
+                        return hypot(location.x - centre.x, location.y - centre.y) < cellWidth * 0.95
                     }
-                    guard onRoute else { continue }
-                    let letters = Array("RUN")
                     let letter = letters[(column * 7 + row * 3) % letters.count]
                     let text = Text(String(letter))
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(Theme.paperInk)
+                        .font(.system(size: min(cellWidth, cellHeight) * 0.92, weight: onRoute ? .semibold : .regular, design: .monospaced))
+                        .foregroundStyle(onRoute ? Theme.paperInk : Theme.paperSecondary.opacity(0.28))
                     context.draw(text, at: centre)
                 }
             }
@@ -132,44 +145,64 @@ struct PaceTrendView: View {
     let run: Run
     @State private var selection: Int?
 
-    private var paces: [Double] {
-        let splits = RouteGeometry.splits(run.points, breaks: run.segmentBreaks)
-        guard !splits.isEmpty else { return [] }
-        return splits.map(\.paceSecondsPerKm)
+    private var splits: [RouteGeometry.Split] {
+        RouteGeometry.splits(run.points, breaks: run.segmentBreaks)
     }
 
     var body: some View {
         GeometryReader { proxy in
-            let values = paces
+            let values = splits.map(\.paceSecondsPerKm)
             let maximum = values.max() ?? 1
             let minimum = values.min() ?? 0
+            let baseline = proxy.size.height - 34
+            let spacing = values.isEmpty ? 0 : min((proxy.size.width - 20) / CGFloat(values.count), 38)
+            let barWidth = min(spacing * 0.52, 18)
 
             ZStack(alignment: .topLeading) {
                 Canvas { context, size in
-                    var baseline = Path()
-                    baseline.move(to: CGPoint(x: 8, y: size.height - 31))
-                    baseline.addLine(to: CGPoint(x: size.width - 8, y: size.height - 31))
-                    context.stroke(baseline, with: .color(Color(white: 0.84)), lineWidth: 0.6)
+                    var rule = Path()
+                    rule.move(to: CGPoint(x: 8, y: baseline))
+                    rule.addLine(to: CGPoint(x: size.width - 8, y: baseline))
+                    context.stroke(rule, with: .color(Color(white: 0.84)), lineWidth: 0.6)
 
                     for (index, value) in values.enumerated() {
                         let span = max(maximum - minimum, 1)
-                        let height = 49 + (1 - (value - minimum) / span) * 84
-                        let x = 8 + CGFloat(index) * 9
-                        let rect = CGRect(x: x, y: size.height - 31 - height, width: 4, height: height)
+                        let height = 40 + (1 - (value - minimum) / span) * (baseline - 56)
+                        let x = 10 + CGFloat(index) * spacing
+                        let rect = CGRect(x: x, y: baseline - height, width: barWidth, height: height)
                         context.fill(Path(rect), with: .color(Theme.paperInk))
                     }
+
+                    // The axis reads where the run started and ended.
+                    let start = Text("0 KM")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(Theme.paperSecondary)
+                    context.draw(start, at: CGPoint(x: 8, y: baseline + 16), anchor: .leading)
+
+                    let end = Text("\(run.distanceMeters / 1000, specifier: "%.1f") KM")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(Theme.paperSecondary)
+                    context.draw(end, at: CGPoint(x: size.width - 8, y: baseline + 16), anchor: .trailing)
                 }
 
                 if let selection, selection < values.count {
-                    crosshair(values: values, selection: selection, size: proxy.size)
+                    crosshair(
+                        values: values,
+                        selection: selection,
+                        size: proxy.size,
+                        spacing: spacing,
+                        barWidth: barWidth,
+                        baseline: baseline
+                    )
                 }
             }
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
-                        let index = Int((value.location.x - 8) / 9)
-                        selection = min(max(index, 0), max(values.count - 1, 0))
+                        guard !values.isEmpty else { return }
+                        let index = Int((value.location.x - 10) / max(spacing, 1))
+                        selection = min(max(index, 0), values.count - 1)
                     }
                     .onEnded { _ in selection = nil }
             )
@@ -177,12 +210,20 @@ struct PaceTrendView: View {
         .accessibilityLabel("Pace per kilometre")
     }
 
-    private func crosshair(values: [Double], selection: Int, size: CGSize) -> some View {
-        let x = 8 + CGFloat(selection) * 9 + 2
+    private func crosshair(
+        values: [Double],
+        selection: Int,
+        size: CGSize,
+        spacing: CGFloat,
+        barWidth: CGFloat,
+        baseline: CGFloat
+    ) -> some View {
+        let x = 10 + CGFloat(selection) * spacing + barWidth / 2
+        let fastest = values.enumerated().min { $0.element < $1.element }?.offset
         return ZStack(alignment: .topLeading) {
             Rectangle()
-                .fill(Color(white: 0.7))
-                .frame(width: 1, height: size.height - 31)
+                .fill(Color(white: 0.72))
+                .frame(width: 1, height: baseline - 4)
                 .offset(x: x)
             Text(Format.pace(values[selection]))
                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
@@ -190,7 +231,13 @@ struct PaceTrendView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(Theme.paperInk, in: Capsule())
-                .offset(x: min(max(x - 28, 0), size.width - 62), y: 14)
+                .offset(x: min(max(x - 30, 0), size.width - 62), y: 12)
+            if let fastest, fastest == selection {
+                Text("FASTEST")
+                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(Theme.paperSecondary)
+                    .offset(x: min(max(x - 22, 0), size.width - 44), y: baseline + 4)
+            }
         }
     }
 }
