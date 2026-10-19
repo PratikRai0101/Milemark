@@ -105,7 +105,7 @@ final class RunRecorderTests: XCTestCase {
         recorder.tick(now: start.addingTimeInterval(10))
         XCTAssertEqual(recorder.elapsedTime, 10, accuracy: 0.5)
 
-        recorder.pause()
+        recorder.pause(now: start.addingTimeInterval(10))
         recorder.tick(now: start.addingTimeInterval(60))
         // Time after a pause is not counted.
         XCTAssertEqual(recorder.elapsedTime, 10, accuracy: 0.5)
@@ -132,12 +132,24 @@ final class RunRecorderTests: XCTestCase {
         }
         XCTAssertEqual(recorder.phase, .recording)
 
+        // The runner stops: a still sample, and then no more movement.
+        recorder.ingest([
+            RoutePoint(
+                latitude: 1.3008,
+                longitude: 103.8700,
+                altitude: 0,
+                timestamp: start.addingTimeInterval(10),
+                horizontalAccuracy: 5,
+                speed: 0
+            )
+        ])
+
         // Ten seconds of standing still is not enough.
-        recorder.tick(now: start.addingTimeInterval(24))
+        recorder.tick(now: start.addingTimeInterval(20))
         XCTAssertEqual(recorder.phase, .recording)
 
         // Twenty seconds is.
-        recorder.tick(now: start.addingTimeInterval(34))
+        recorder.tick(now: start.addingTimeInterval(32))
         XCTAssertEqual(recorder.phase, .paused)
         XCTAssertTrue(recorder.isAutoPaused)
     }
