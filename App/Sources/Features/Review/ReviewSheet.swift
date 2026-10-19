@@ -13,7 +13,9 @@ struct ReviewSheet: View {
     let elapsed: TimeInterval
     let pace: Double?
     let onCancel: () -> Void
-    let onPrint: (Run) -> Void
+    /// Returns the finished run. The route is built by the caller, which owns
+    /// the recording, so no geometry is lost on the way to the receipt.
+    let onPrint: (String, String) -> Run
 
     @Environment(\.dismiss) private var dismiss
 
@@ -82,7 +84,7 @@ struct ReviewSheet: View {
                         .padding(.top, 10)
 
                     Button {
-                        onPrint(makeRun())
+                        onPrint(title, note)
                     } label: {
                         Label("Print receipt", systemImage: "arrow.down")
                     }
@@ -117,21 +119,5 @@ struct ReviewSheet: View {
                 .font(Theme.Font.label)
                 .foregroundStyle(Theme.secondary)
         }
-    }
-
-    private func makeRun() -> Run {
-        Run(
-            title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Outdoor run" : title,
-            note: note.trimmingCharacters(in: .whitespacesAndNewlines),
-            startedAt: .now.addingTimeInterval(-elapsed),
-            endedAt: .now,
-            elapsedTime: elapsed,
-            movingTime: elapsed,
-            distanceMeters: distanceKilometres * 1000,
-            elevationGainMeters: 0,
-            points: [],
-            isCollected: false,
-            source: .recorded
-        )
     }
 }

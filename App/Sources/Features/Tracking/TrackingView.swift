@@ -51,10 +51,17 @@ struct TrackingView: View {
                 elapsed: recorder.elapsedTime,
                 pace: recorder.paceSecondsPerKm,
                 onCancel: { isReviewing = false },
-                onPrint: { run in
+                onPrint: { title, note in
+                    // The recording owns the route, so the printed receipt
+                    // carries the geometry that was actually run.
+                    let run = recorder.makeRun(
+                        title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Outdoor run" : title,
+                        note: note.trimmingCharacters(in: .whitespacesAndNewlines)
+                    )
                     store.add(run)
                     isReviewing = false
                     recorder.reset()
+                    return run
                 }
             )
             .presentationDetents([.large])
