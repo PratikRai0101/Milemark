@@ -167,8 +167,7 @@ public enum RouteGeometry {
 
     /// Bounding box of a set of points, with a minimum span so a single-point
     /// route still produces a usable box.
-    public struct Bounds: Equatable, Sendable {
-        public var minLatitude: Double
+    public struct Bounds: Equatable, Sendable {        public var minLatitude: Double
         public var maxLatitude: Double
         public var minLongitude: Double
         public var maxLongitude: Double
@@ -191,5 +190,93 @@ public enum RouteGeometry {
             bounds.maxLongitude = max(bounds.maxLongitude, point.longitude)
         }
         return bounds
+    }
+
+    /// Resamples a route into a fixed number of points, evenly spaced along
+    /// its length.
+    ///
+    /// Two runs of the same loop have different numbers of GPS samples, so
+    /// they can only be compared after they have been resampled.
+    public static func resampled(_ points: [RoutePoint], count: Int = 64) -> [CGPoint] {
+        let normalised = normalisedPoints(points)
+        guard normalised.count > 1, count > 1 else { return normalised }
+
+        // Walk the route by arc length in the normalised space.
+        var lengths: [CGFloat] = [0]
+        for index in 1..<normalised.count {
+            let a = normalised[index - 1]
+            let b = normalised[index]
+            lengths.append(lengths[index - 1] + hypot(b.x - a.x, b.y - a.y))
+        }
+        guard let total = lengths.last, total > 0 else { return normalised }
+
+        var result: [CGPoint] = []
+        result.reserveCapacity(count)
+        for step in 0..<count {
+            let target = total * CGFloat(step) / CGFloat(count - 1)
+            var index = 1
+            while index < lengths.count - 1 && lengths[index] < target { index += 1 }
+            let previousLength = lengths[index - 1]
+            let nextLength = lengths[index]
+            let span = nextLength - previousLength
+            let fraction = span > 0 ? (target - previousLength) / span : 0
+            let a = normalised[index - 1]
+            let b = normalised[index]
+            result.append(
+                CGPoint(
+                    x: a.x + (b.x - a.x) * fraction,
+                    y: a.y + (b.y - a.y) * fraction
+                )
+            )
+        }
+        return result
+    }
+
+    /// How alike two routes are, from 0 (nothing in common) to 1 (the same
+    /// shape).
+    ///
+    /// The comparison is made on the normalised shape, so the same loop run
+    /// twice matches. The points are matched by their nearest neighbour
+    /// rather than by their position along the route, because two runs of the
+    /// same loop usually have a different number of laps and would otherwise
+    /// be compared out of step.
+    public static func similarity(_ first: [RoutePoint], _ second: [RoutePoint]) -> Double {
+        guard first.count > 1, second.count > 1 else { return 0 }
+        let a = resampled(first)
+        let b = resampled(second)
+        guard a.count == b.count, a.count > 1 else { return 0 }
+        return 1 - (meanDistanceToLine(a, b) + meanDistanceToLine(b, a)) / 2
+    }
+
+    /// The average distance from each point to the line drawn by the other
+    /// route.
+    ///
+    /// Measuring to the line rather than to the sampled points is what makes
+    /// two runs of the same loop match: the same road sampled at a different
+    /// point in the lap is still on the line.
+    private static func meanDistanceToLine(_ a: [CGPoint], _ b: [CGPoint]) -> CGFloat {
+        var total: CGFloat = 0
+        for point in a {
+            var nearest = CGFloat.greatestFiniteMagnitude
+            for index in 1..<b.count {
+                nearest = min(nearest, distance(from: point, toSegmentFrom: b[index - 1], to: b[index]))
+            }
+            total += nearest
+        }
+        return total / CGFloat(a.count)
+    }
+
+    /// The distance from a point to a line segment.
+    private static func distance(from point: CGPoint, toSegmentFrom start: CGPoint, to end: CGPoint) -> CGFloat {
+        let dx = end.x - start.x
+        let dy = end.y - start.y
+        let lengthSquared = dx * dx + dy * dy
+        guard lengthSquared > 0 else {
+            return hypot(point.x - start.x, point.y - start.y)
+        }
+        let projection = ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared
+        let t = CGFloat(max(0, min(1, projection)))
+        let closest = CGPoint(x: start.x + t * dx, y: start.y + t * dy)
+        return hypot(point.x - closest.x, point.y - closest.y)
     }
 }
