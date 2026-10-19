@@ -24,6 +24,8 @@ public enum DemoActivity {
         var paceSecondsPerKm: Double
         var elevationGain: Double
         var heartRate: Int?
+        /// Whether the sample arrives already in the collection.
+        var isCollected = false
     }
 
     private static let recipes: [Recipe] = [
@@ -81,7 +83,8 @@ public enum DemoActivity {
             distanceKilometres: 12.0,
             paceSecondsPerKm: 373,
             elevationGain: 48,
-            heartRate: 151
+            heartRate: 151,
+            isCollected: true
         ),
         Recipe(
             title: "Hill repeats",
@@ -188,7 +191,9 @@ public enum DemoActivity {
             elevationGainMeters: recipe.elevationGain,
             averageHeartRate: recipe.heartRate,
             points: points,
-            isCollected: false,
+            // One of the samples is already kept, so the collection is not
+            // empty on a first run.
+            isCollected: recipe.isCollected,
             source: .imported
         )
     }
