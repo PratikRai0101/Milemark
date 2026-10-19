@@ -10,6 +10,17 @@ public enum Format {
         return String(format: "%02d′%02d″", total / 60, total % 60)
     }
 
+    /// A difference in pace, written the way a runner would say it.
+    ///
+    /// A few seconds is said as seconds, not as `00′11″`.
+    public static func paceDifference(_ seconds: Double) -> String {
+        let total = Int(abs(seconds).rounded())
+        if total < 60 {
+            return "\(total) s"
+        }
+        return String(format: "%d:%02d", total / 60, total % 60)
+    }
+
     /// `03:24:25` or `34:17`.
     ///
     /// Hours are zero-padded so the receipt reads as a fixed monospaced
