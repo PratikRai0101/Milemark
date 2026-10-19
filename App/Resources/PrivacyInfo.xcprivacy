@@ -1,0 +1,26 @@
+// The app records a run and stores it on the device. It does not track
+// users across apps or websites, and it collects no data beyond the route
+// the runner chooses to record.
+NSPrivacyTracking: false
+
+NSPrivacyTrackingDomains: []
+
+NSPrivacyCollectedDataTypes:
+  - NSPrivacyCollectedDataType: NSPrivacyCollectedDataTypePreciseLocation
+    NSPrivacyCollectedDataTypeLinked: false
+    NSPrivacyCollectedDataTypeTracking: false
+    NSPrivacyCollectedDataTypePurposes:
+      - NSPrivacyCollectedDataTypePurposeAppFunctionality
+  - NSPrivacyCollectedDataType: NSPrivacyCollectedDataTypeUserContent
+    NSPrivacyCollectedDataTypeLinked: false
+    NSPrivacyCollectedDataTypeTracking: false
+    NSPrivacyCollectedDataTypePurposes:
+      - NSPrivacyCollectedDataTypePurposeAppFunctionality
+
+NSPrivacyAccessedAPITypes:
+  - NSPrivacyAccessedAPIType: NSPrivacyAccessedAPICategoryFileTimestamp
+    NSPrivacyAccessedAPITypeReasons:
+      - C617.1
+  - NSPrivacyAccessedAPIType: NSPrivacyAccessedAPICategoryUserDefaults
+    NSPrivacyAccessedAPITypeReasons:
+      - CA92.1
