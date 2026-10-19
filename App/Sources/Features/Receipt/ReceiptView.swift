@@ -49,18 +49,7 @@ struct ReceiptView: View {
         .scrollIndicators(.hidden)
         .navigationTitle("Run receipt")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "chevron.left")
-                }
-                .accessibilityLabel("Back to runs")
-            }
-        }
-        .toolbarBackground(Theme.ground, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         .safeAreaInset(edge: .bottom) {
             actions
         }
@@ -109,7 +98,6 @@ struct ReceiptView: View {
             .ignoresSafeArea()
         }
     }
-
     /// Detaches the receipt and returns to the archive.
     private func tearOff() {
         guard !isTearing else { return }
@@ -455,11 +443,11 @@ struct ReceiptActionStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .frame(height: 55)
             .background(
-                isPrimary ? Theme.ink : Theme.paper,
+                isPrimary ? Theme.ink : Theme.tile,
                 in: Capsule()
             )
-            .foregroundStyle(isPrimary ? Theme.ground : Theme.paperInk)
-            .shadow(color: .black.opacity(isPrimary ? 0 : 0.06), radius: 8, y: 3)
+            .foregroundStyle(isPrimary ? Theme.ground : Theme.ink)
+            .shadow(color: .black.opacity(isPrimary ? 0 : 0.08), radius: 8, y: 3)
             .opacity(configuration.isPressed ? 0.85 : 1)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.spring(duration: 0.22, bounce: 0), value: configuration.isPressed)
