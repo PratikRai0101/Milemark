@@ -49,8 +49,8 @@ struct ReceiptView: View {
                     photoItem: $photoItem,
                     onTear: { tearOff() }
                 )
-                .rotationEffect(.degrees(isTearing ? 3 : 0))
-                .offset(y: isTearing ? 260 : 0)
+                .rotationEffect(.degrees(tearProgress * 3))
+                .offset(y: tearProgress * 150)
                 .opacity(isTearing ? 0 : 1)
             }
             .padding(.horizontal, 24)
@@ -116,12 +116,18 @@ struct ReceiptView: View {
         }
     }
     /// Detaches the receipt and returns to the archive.
+    ///
+    /// The paper has already been pulled down by the grip, so this only has
+    /// to let it fall away and take the run with it.
     private func tearOff() {
         guard !isTearing else { return }
         isTearing = true
         store.setCollected(true, for: run.id)
+        withAnimation(.easeIn(duration: 0.42)) {
+            tearProgress = 3
+        }
         Task {
-            try? await Task.sleep(for: .milliseconds(520))
+            try? await Task.sleep(for: .milliseconds(460))
             dismiss()
         }
     }
@@ -378,6 +384,7 @@ struct ReceiptPaper: View {
     private var tearGesture: some Gesture {
         DragGesture(minimumDistance: 4)
             .onChanged { value in
+                // The paper follows the finger directly: no easing, no lag.
                 tearProgress = min(1, max(0, value.translation.height / 90))
             }
             .onEnded { value in
@@ -385,7 +392,8 @@ struct ReceiptPaper: View {
                     tearProgress = 1
                     onTear()
                 } else {
-                    withAnimation(.spring(duration: 0.26, bounce: 0)) {
+                    // Released early: the paper settles back into the slot.
+                    withAnimation(.spring(duration: 0.3, bounce: 0.1)) {
                         tearProgress = 0
                     }
                 }
