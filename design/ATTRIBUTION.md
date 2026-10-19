@@ -20,6 +20,21 @@ The sample route follows the mapped geometry of the Stadium Park Connector. It
 is a fictional sample: current access, closures, safety and suitability have
 not been validated, and it is not a navigational route.
 
+### `App/Sources/Core/Services/DemoRoute.swift`
+
+The sample activities in the app follow real streets. `design/make-demo-routes.swift`
+reads the same extract, builds a graph of the runnable footways, cycleways and
+streets, and searches it for genuine closed loops — the streets a runner would
+actually take around a block or a park. Those loops are checked in as Swift
+source, so the app has no runtime dependency on the extract.
+
+Regenerate them with:
+
+```sh
+swift design/make-demo-routes.swift design/assets/kallang-map.json \
+  App/Sources/Core/Services/DemoRoute.swift
+```
+
 CARTO was not used. Its current basemap terms require an issued API key.
 
 ## `assets/run-candidate-2.jpg`
