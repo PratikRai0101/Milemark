@@ -18,16 +18,16 @@ surfaces are still provisional.
 
 | Area | State |
 |---|---|
-| Route recording with Core Location | Working, including pause/resume and background location |
+| Route recording with Core Location | Working, including pause/resume, auto-pause and background location |
 | Live map | Working, with a quiet muted basemap and a vivid track |
 | Route archive | Working |
 | Printed receipt with four graphic treatments | Working |
 | Review and share preview | Working |
 | Sharing | Exports a receipt image to the system share sheet |
 | Photo print treatment | Working, with a halftone treatment |
+| Collection of kept receipts | Working |
 | Strava import | Not implemented — the archive header is demo data |
 | Health / heart rate | Not implemented — the receipt shows `—` |
-| Auto-pause | Not implemented — pausing is manual |
 
 ## Requirements
 
@@ -64,6 +64,13 @@ xcodebuild -project Milemark.xcodeproj -scheme Milemark \
 `RouteGeometryTests` covers the parts where a bug would quietly produce a
 wrong number rather than a crash: distance accumulation, sample rejection,
 splits, pace formatting, route normalisation and endpoint trimming.
+
+`RunRecorderTests` covers the recorder's decisions: distance accumulation,
+standing still, implausible jumps, pausing and the auto-pause threshold.
+
+`MilemarkUITests` drives the app end to end — opening a receipt, changing
+the graphic, pulling the paper short of the tear and past it, and opening the
+share preview. A screenshot cannot show whether a gesture behaves.
 
 ## Sample activities
 
@@ -132,6 +139,9 @@ wrong is worse than no route at all:
 - Pausing stops the clock and the distance. Resuming starts a new segment, so
   the route never draws a false straight line across the gap, and the distance
   covered during the pause is never counted.
+- If the runner stops for more than twelve seconds, the run pauses itself.
+  The test is deliberately slow, so a pause at traffic lights is not mistaken
+  for the end of the run.
 
 None of this makes a route guaranteed accurate. It makes the app refuse to
 invent distance when the signal is poor.
