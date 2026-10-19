@@ -109,6 +109,21 @@ public final class RunStore {
         runs.filter { Calendar.current.isDate($0.startedAt, inSameDayAs: date) }
     }
 
+    /// The closest earlier run of the same route.
+    ///
+    /// Two runs count as the same route when their shapes match closely
+    /// enough, however different the number of GPS samples in each.
+    public func similarRun(to run: Run, above similarity: Double = 0.9) -> Run? {
+        let candidates = runs.filter { $0.id != run.id && $0.startedAt < run.startedAt }
+        return candidates
+            .map { candidate in
+                (candidate, RouteGeometry.similarity(candidate.points, run.points))
+            }
+            .filter { $0.1 >= similarity }
+            .max { $0.1 < $1.1 }?
+            .0
+    }
+
     /// Total distance for the current year, in kilometres.
     public var yearDistanceKilometres: Double {
         let calendar = Calendar.current

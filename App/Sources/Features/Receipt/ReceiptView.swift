@@ -47,6 +47,7 @@ struct ReceiptView: View {
                     showGraphicPicker: $showGraphicPicker,
                     tearProgress: $tearProgress,
                     photoItem: $photoItem,
+                    comparisonRun: store.similarRun(to: run),
                     onTear: { tearOff() }
                 )
                 .rotationEffect(.degrees(tearProgress * 3))
@@ -175,6 +176,8 @@ struct ReceiptPaper: View {
     @Binding var showGraphicPicker: Bool
     @Binding var tearProgress: CGFloat
     @Binding var photoItem: PhotosPickerItem?
+    /// The last time the same route was run, when there was one.
+    let comparisonRun: Run?
     let onTear: () -> Void
 
     @State private var paperHeight: CGFloat = 0
@@ -189,6 +192,7 @@ struct ReceiptPaper: View {
             heading
             graphicRegion
             metrics
+            comparison
             Divider()
                 .overlay(Theme.paperSecondary.opacity(0.55))
                 .padding(.vertical, 14)
@@ -341,6 +345,48 @@ struct ReceiptPaper: View {
                         .minimumScaleFactor(0.8)
                 }
                 .frame(maxWidth: .infinity, alignment: index % 3 == 1 ? .center : (index % 3 == 0 ? .leading : .trailing))
+            }
+        }
+    }
+
+    /// How this run compares with the last time the same route was run.
+    @ViewBuilder
+    private var comparison: some View {
+        if let previous = comparisonRun {
+            let difference = run.movingTime - previous.movingTime
+            let faster = difference < 0
+            let magnitude = abs(difference)
+            let paceDifference = RouteGeometry.paceSecondsPerKm(
+                distanceMeters: run.distanceMeters,
+                movingTime: run.movingTime
+            ).map { current in
+                RouteGeometry.paceSecondsPerKm(
+                    distanceMeters: previous.distanceMeters,
+                    movingTime: previous.movingTime
+                ).map { current - $0 } ?? 0
+            } ?? 0
+
+            VStack(spacing: 3) {
+                Text(faster ? "FASTER ON THE SAME ROUTE" : "SLOWER ON THE SAME ROUTE")
+                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .tracking(0.4)
+                    .foregroundStyle(Theme.paperSecondary)
+                Text("\(Format.duration(magnitude)) \(faster ? "quicker" : "slower") than \(previous.startedAt.formatted(.dateTime.day().month(.abbreviated)))")
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .foregroundStyle(Theme.paperInk)
+                if abs(paceDifference) >= 1 {
+                    Text("Pace \(Format.paceDifference(paceDifference)) per km \(faster ? "faster" : "slower")")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(Theme.paperSecondary)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .overlay(alignment: .top) {
+                Rectangle().fill(Theme.paperSecondary.opacity(0.35)).frame(height: 1)
+            }
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(Theme.paperSecondary.opacity(0.35)).frame(height: 1)
             }
         }
     }
