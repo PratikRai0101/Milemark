@@ -115,9 +115,13 @@ public final class RunRecorder: NSObject {
         manager.startUpdatingLocation()
     }
 
-    public func pause() {
+    /// Pauses the run.
+    ///
+    /// The clock is passed in so a pause always agrees with the rest of the
+    /// session's timing.
+    public func pause(now: Date = .now) {
         guard phase == .recording else { return }
-        tick()
+        tick(now: now)
         phase = .paused
         isAutoPaused = false
     }
@@ -270,7 +274,9 @@ public final class RunRecorder: NSObject {
             self.lastMovementAt = now
             return
         }
-        tick(now: now)
+        // The clock is not ticked here: the tick that led to this check has
+        // already been counted, and ticking again would call straight back
+        // into this method.
         phase = .paused
         isAutoPaused = true
     }
