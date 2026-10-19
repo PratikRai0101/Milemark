@@ -13,19 +13,21 @@ with the ends of the route trimmed.
 ## Status
 
 **Early development.** The core loop — record a run, review it, print the
-receipt, keep it — is implemented and runs on a simulator. Several surfaces are
-still provisional.
+receipt, keep it, share it — is implemented and runs on a simulator. Several
+surfaces are still provisional.
 
 | Area | State |
 |---|---|
 | Route recording with Core Location | Working, including pause/resume and background location |
+| Live map | Working, with a quiet muted basemap and a vivid track |
 | Route archive | Working |
 | Printed receipt with four graphic treatments | Working |
 | Review and share preview | Working |
-| Photo print treatment | Placeholder |
+| Sharing | Exports a receipt image to the system share sheet |
+| Photo print treatment | Working, with a halftone treatment |
 | Strava import | Not implemented — the archive header is demo data |
 | Health / heart rate | Not implemented — the receipt shows `—` |
-| Sharing / export | Preview only; nothing is written to disk or sent |
+| Auto-pause | Not implemented — pausing is manual |
 
 ## Requirements
 
@@ -76,6 +78,15 @@ Two launch arguments help when capturing screenshots or driving the UI:
 ```sh
 # seed the samples and open the first receipt
 xcrun simctl launch booted app.milemark.app -seedDemoData -openReceipt
+
+# open the recording screen and start a run
+xcrun simctl launch booted app.milemark.app -showRecord -startRecording
+```
+
+A location can be fed to the simulator while a run is recording:
+
+```sh
+xcrun simctl location booted set 1.3050,103.8700
 ```
 
 ## Continuous integration
@@ -104,6 +115,11 @@ trademark-checked.
 Milemark records location with Core Location and draws the route with MapKit.
 Neither costs money: Apple's native map display has no usage charge, and
 recording a route does not need a routing or directions service.
+
+The map is drawn with MapKit using a **muted** standard style — no points of
+interest, no traffic, no rotation — so the recorded track and the runner are
+the only saturated things on screen. The route is drawn by MapKit itself; a
+SwiftUI filter applied to the map breaks its metal-rendered tiles.
 
 The recorder is deliberately strict, because a plausible-looking route that is
 wrong is worse than no route at all:
