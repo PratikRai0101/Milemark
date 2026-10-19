@@ -337,6 +337,7 @@ struct GraphicPicker: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("graphic-\(option.rawValue)")
             }
         }
         .padding(10)
