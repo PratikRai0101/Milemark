@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 /// The graphic region of the receipt.
@@ -7,6 +8,7 @@ import SwiftUI
 struct ReceiptGraphicView: View {
     let graphic: ReceiptGraphic
     let run: Run
+    var photoItem: PhotosPickerItem?
 
     var body: some View {
         switch graphic {
@@ -17,7 +19,7 @@ struct ReceiptGraphicView: View {
         case .pace:
             PaceTrendView(run: run)
         case .photo:
-            PhotoPrintView()
+            PhotoPrintView(item: photoItem)
         }
     }
 }
@@ -195,14 +197,65 @@ struct PaceTrendView: View {
 
 /// A photographic print treatment.
 struct PhotoPrintView: View {
+    let item: PhotosPickerItem?
+
+    @State private var image: UIImage?
+
     var body: some View {
         ZStack {
             Theme.graphic
-            Image(systemName: "camera.aperture")
-                .font(.system(size: 34, weight: .light))
-                .foregroundStyle(Theme.paperSecondary)
+            if let image {
+                PhotoPrintImage(image: image)
+            } else {
+                Image(systemName: "camera.aperture")
+                    .font(.system(size: 34, weight: .light))
+                    .foregroundStyle(Theme.paperSecondary)
+            }
+        }
+        .task(id: item) {
+            image = await loadImage()
         }
         .accessibilityLabel("Photographic print treatment")
+    }
+
+    private func loadImage() async -> UIImage? {
+        guard let item else { return nil }
+        guard let data = try? await item.loadTransferable(type: Data.self) else { return nil }
+        return UIImage(data: data)
+    }
+}
+
+/// The printed photograph, treated like an ink-on-paper print.
+private struct PhotoPrintImage: View {
+    let image: UIImage
+
+    var body: some View {
+        Image(uiImage: image)
+            .resizable()
+            .scaledToFill()
+            .grayscale(1)
+            .contrast(1.6)
+            .overlay {
+                // A halftone screen, so the photograph reads as printed rather
+                // than as a screenshot.
+                Canvas { context, size in
+                    var dots = Path()
+                    let step: CGFloat = 3
+                    var y: CGFloat = 0
+                    while y < size.height {
+                        var x: CGFloat = 0
+                        while x < size.width {
+                            dots.addEllipse(in: CGRect(x: x, y: y, width: 1.1, height: 1.1))
+                            x += step
+                        }
+                        y += step
+                    }
+                    context.fill(dots, with: .color(.white.opacity(0.5)))
+                }
+                .blendMode(.screen)
+                .allowsHitTesting(false)
+            }
+            .clipped()
     }
 }
 
