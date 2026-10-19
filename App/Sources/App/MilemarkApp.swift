@@ -26,6 +26,7 @@ struct RootView: View {
     enum Tab: Hashable {
         case runs
         case record
+        case kept
     }
 
     var body: some View {
@@ -42,6 +43,12 @@ struct RootView: View {
             }
             .tabItem { Label("Record", systemImage: "figure.run") }
             .tag(Tab.record)
+
+            NavigationStack {
+                CollectionView()
+            }
+            .tabItem { Label("Kept", systemImage: "tray") }
+            .tag(Tab.kept)
         }
         .toolbarBackground(Theme.ground, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
