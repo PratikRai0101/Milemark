@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 /// The printed receipt.
@@ -20,6 +21,7 @@ struct ReceiptView: View {
     @State private var tearProgress: CGFloat = 0
     @State private var showShare = false
     @State private var showGraphicPicker = false
+    @State private var photoItem: PhotosPickerItem?
 
     init(run: Run) {
         self.run = run
@@ -36,6 +38,7 @@ struct ReceiptView: View {
                     isFeeding: isFeeding,
                     showGraphicPicker: $showGraphicPicker,
                     tearProgress: $tearProgress,
+                    photoItem: $photoItem,
                     onTear: { tearOff() }
                 )
                 .rotationEffect(.degrees(isTearing ? 3 : 0))
@@ -150,6 +153,7 @@ struct ReceiptPaper: View {
     let isFeeding: Bool
     @Binding var showGraphicPicker: Bool
     @Binding var tearProgress: CGFloat
+    @Binding var photoItem: PhotosPickerItem?
     let onTear: () -> Void
 
     @State private var paperHeight: CGFloat = 0
@@ -240,7 +244,7 @@ struct ReceiptPaper: View {
 
     private var graphicRegion: some View {
         ZStack(alignment: .topLeading) {
-            ReceiptGraphicView(graphic: graphic, run: run)
+            ReceiptGraphicView(graphic: graphic, run: run, photoItem: photoItem)
 
             Button {
                 showGraphicPicker = true
@@ -259,6 +263,19 @@ struct ReceiptPaper: View {
             .buttonStyle(.plain)
             .padding(7)
             .accessibilityLabel("Change receipt graphic, currently \(graphic.title)")
+
+            if graphic == .photo {
+                PhotosPicker(selection: $photoItem, matching: .images) {
+                    Image(systemName: "photo.badge.plus")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Theme.paperInk)
+                        .frame(width: 44, height: 44)
+                        .background(Theme.paper, in: Circle())
+                }
+                .padding(7)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .accessibilityLabel("Choose a photo to print")
+            }
 
             if showGraphicPicker {
                 GraphicPicker(graphic: $graphic, isPresented: $showGraphicPicker)
