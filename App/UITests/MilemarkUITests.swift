@@ -6,8 +6,8 @@ import XCTest
 final class MilemarkUITests: XCTestCase {
     private var app: XCUIApplication!
 
-    override func setUp() {
-        super.setUp()
+    /// Launches the app with the sample activities loaded.
+    private func launchApp() {
         continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments = ["-seedDemoData"]
@@ -35,23 +35,22 @@ final class MilemarkUITests: XCTestCase {
     /// Scrolls the receipt to the end, where the tear grip sits.
     ///
     /// At the end of the paper there is nothing left to scroll, so a pull
-    /// down is unambiguously a pull on the paper rather than a scroll.
+    /// down is unambiguously a pull on the paper rather than a scroll. The
+    /// grip says so, and the tear only engages there.
     @discardableResult
     private func scrollToTearGrip() -> Bool {
-        let bar = app.descendants(matching: .any)
-            .matching(identifier: "receipt-actions")
-            .firstMatch
-        for _ in 0..<12 {
+        for _ in 0..<15 {
             let grip = tearGrip
             guard grip.exists else { return false }
-            let clearOfBar = !bar.exists || grip.frame.maxY <= bar.frame.minY
-            if clearOfBar, grip.frame.minY > 120, grip.isHittable { return true }
+            // The grip only offers the pull once the receipt is at the end.
+            if grip.label == "Pull to tear" { return true }
             app.scrollViews.firstMatch.swipeUp()
         }
-        return false
+        return tearGrip.label == "Pull to tear"
     }
 
     func testArchiveOpensAReceipt() {
+        launchApp()
         XCTAssertTrue(waitFor(app.staticTexts["MILEMARK"]))
 
         let route = button(startingWith: "Interval")
@@ -65,6 +64,7 @@ final class MilemarkUITests: XCTestCase {
     }
 
     func testGraphicPickerChangesTheTreatment() {
+        launchApp()
         let route = button(startingWith: "Interval")
         XCTAssertTrue(waitFor(route))
         route.tap()
@@ -83,6 +83,7 @@ final class MilemarkUITests: XCTestCase {
     }
 
     func testPullingThePaperShortOfTheThresholdPutsItBack() {
+        launchApp()
         let route = button(startingWith: "Interval")
         XCTAssertTrue(waitFor(route))
         route.tap()
@@ -103,6 +104,7 @@ final class MilemarkUITests: XCTestCase {
     }
 
     func testTearingOffCollectsTheReceipt() {
+        launchApp()
         let route = button(startingWith: "Interval")
         XCTAssertTrue(waitFor(route))
         route.tap()
@@ -117,6 +119,7 @@ final class MilemarkUITests: XCTestCase {
     }
 
     func testPullingThePaperPastTheThresholdCollectsIt() {
+        launchApp()
         let route = button(startingWith: "Interval")
         XCTAssertTrue(waitFor(route))
         route.tap()
@@ -134,6 +137,7 @@ final class MilemarkUITests: XCTestCase {
     }
 
     func testSharePreviewOpens() {
+        launchApp()
         let route = button(startingWith: "Interval")
         XCTAssertTrue(waitFor(route))
         route.tap()
