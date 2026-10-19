@@ -103,6 +103,7 @@ struct ReceiptView: View {
                 Label("Share", systemImage: "square.and.arrow.up")
             }
             .buttonStyle(ReceiptActionStyle(isPrimary: false))
+            .accessibilityIdentifier("share-receipt")
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 8)
@@ -283,6 +284,7 @@ struct ReceiptPaper: View {
             .buttonStyle(.plain)
             .padding(7)
             .accessibilityLabel("Change receipt graphic, currently \(graphic.title)")
+            .accessibilityIdentifier("graphic-badge")
 
             if graphic == .photo {
                 PhotosPicker(selection: $photoItem, matching: .images) {
@@ -366,19 +368,27 @@ struct ReceiptPaper: View {
     }
 
     private var tearGrip: some View {
-        HStack(spacing: 7) {
-            Image(systemName: "arrow.down")
-                .font(.system(size: 11, weight: .semibold))
-            Text(tearProgress > 0.6 ? "Release to collect" : "Pull to tear")
-                .font(.system(size: 11, design: .monospaced))
+        Button {
+            onTear()
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: "arrow.down")
+                    .font(.system(size: 11, weight: .semibold))
+                Text(tearProgress > 0.6 ? "Release to collect" : "Pull to tear")
+                    .font(.system(size: 11, design: .monospaced))
+            }
+            .foregroundStyle(Theme.paperSecondary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .contentShape(Rectangle())
         }
-        .foregroundStyle(Theme.paperSecondary)
-        .frame(maxWidth: .infinity)
-        .frame(height: 44)
-        .contentShape(Rectangle())
-        .gesture(tearGesture)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityAction { onTear() }
+        .buttonStyle(.plain)
+        // The grip takes the drag before the scroll view can, so pulling the
+        // paper does not scroll the receipt instead.
+        .highPriorityGesture(tearGesture)
+        .accessibilityLabel("Pull to tear off this receipt")
+        .accessibilityIdentifier("tear-grip")
+        .accessibilityHint("Drag down, or activate, to collect this receipt")
     }
 
     private var tearGesture: some Gesture {

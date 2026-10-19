@@ -33,6 +33,11 @@ struct ArchiveView: View {
                             }
                             .buttonStyle(.plain)
                             .pressable()
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel(
+                                "\(run.title), \(run.startedAt.formatted(.dateTime.day().month(.abbreviated))), \(Format.kilometres(run.distanceMeters)) kilometres"
+                            )
+                            .accessibilityIdentifier("route-\(run.id)")
                         }
                     }
                     .padding(.top, 18)
@@ -165,7 +170,6 @@ private struct RunTile: View {
                 Text(run.startedAt, format: .dateTime.weekday(.abbreviated))
                 Spacer()
                 Text(run.startedAt, format: .dateTime.day())
-                    .accessibilityLabel(run.startedAt.formatted(.dateTime.day().month(.abbreviated)))
             }
             .font(Theme.Font.label)
             .foregroundStyle(Theme.secondary)
