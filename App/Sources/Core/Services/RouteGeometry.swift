@@ -119,33 +119,31 @@ public enum RouteGeometry {
 
     /// Projects a route into a unit square, preserving aspect ratio so a printed
     /// silhouette always looks like the shape that was actually run.
+    ///
+    /// The projection works in metres, not degrees: a degree of longitude is
+    /// shorter than a degree of latitude away from the equator, and using
+    /// degrees directly would squash every route.
     public static func normalisedPoints(_ points: [RoutePoint]) -> [CGPoint] {
         guard points.count > 1 else { return points.map { _ in .zero } }
         let bounds = bounds(of: points)
         let midLatitude = (bounds.minLatitude + bounds.maxLatitude) / 2
-        let latitudeSpan = max(bounds.maxLatitude - bounds.minLatitude, 1e-7)
-        let longitudeSpan = max(bounds.maxLongitude - bounds.minLongitude, 1e-7)
-        // Correct longitude degrees for latitude so the shape is not stretched.
-        let correction = cos(midLatitude * .pi / 180)
-        let aspect = longitudeSpan * correction / latitudeSpan
+        let metresPerDegreeLatitude = 110_574.0
+        let metresPerDegreeLongitude = 111_320.0 * cos(midLatitude * .pi / 180)
 
         var result: [CGPoint] = []
         result.reserveCapacity(points.count)
         for point in points {
-            let x = (point.longitude - bounds.minLongitude) * correction
-            let y = point.latitude - bounds.minLatitude
+            let x = (point.longitude - bounds.minLongitude) * metresPerDegreeLongitude
+            let y = (point.latitude - bounds.minLatitude) * metresPerDegreeLatitude
             result.append(CGPoint(x: x, y: y))
         }
         let maxX = result.map(\.x).max() ?? 1
         let maxY = result.map(\.y).max() ?? 1
 
-        if aspect >= 1 {
-            let scale = 1 / maxX
-            result = result.map { CGPoint(x: $0.x * scale, y: $0.y * scale / aspect) }
-        } else {
-            let scale = 1 / maxY
-            result = result.map { CGPoint(x: $0.x * scale * aspect, y: $0.y * scale) }
-        }
+        // Fit into the unit square on the longer axis, so the shape is only
+        // ever scaled down and never distorted.
+        let scale = 1 / Swift.max(maxX, maxY)
+        result = result.map { CGPoint(x: $0.x * scale, y: $0.y * scale) }
         return result
     }
 

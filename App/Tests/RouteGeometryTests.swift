@@ -84,6 +84,24 @@ final class RouteGeometryTests: XCTestCase {
         XCTAssertEqual(height, 1, accuracy: 0.001)
     }
 
+    func testNormalisationKeepsTrueShapeOfAWideRoute() {
+        // 300 m east, 300 m north. A degree of longitude is slightly shorter
+        // than a degree of latitude, so the printed shape must stay close to
+        // square rather than being stretched.
+        let metresPerDegreeLatitude = 110_574.0
+        let metresPerDegreeLongitude = 111_320.0 * cos(1.30 * .pi / 180)
+        let points = [
+            point(1.30, 103.80),
+            point(1.30, 103.80 + 300 / metresPerDegreeLongitude),
+            point(1.30 + 300 / metresPerDegreeLatitude, 103.80 + 300 / metresPerDegreeLongitude)
+        ]
+        let normalised = RouteGeometry.normalisedPoints(points)
+        let width = normalised.map(\.x).max() ?? 0
+        let height = normalised.map(\.y).max() ?? 0
+        XCTAssertEqual(width, 1, accuracy: 0.001)
+        XCTAssertEqual(height, 1, accuracy: 0.01)
+    }
+
     func testTrimRemovesEndsOfRoute() {
         let points = (0..<11).map { index in
             point(1.3 + Double(index) * 0.001, 103.8)
