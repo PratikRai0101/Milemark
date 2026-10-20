@@ -8,6 +8,7 @@ import SwiftUI
 struct ArchiveView: View {
     @Environment(RunStore.self) private var store
     @State private var selectedRun: Run?
+    @Namespace private var transition
 
     private let columns = [GridItem(.adaptive(minimum: 104), spacing: 11)]
 
@@ -38,6 +39,9 @@ struct ArchiveView: View {
                                 "\(run.title), \(run.startedAt.formatted(.dateTime.day().month(.abbreviated))), \(Format.kilometres(run.distanceMeters)) kilometres"
                             )
                             .accessibilityIdentifier("route-\(run.id)")
+                            // The route grows into the receipt, so the shape you
+                            // tapped is the shape that gets printed.
+                            .matchedTransitionSource(id: run.id, in: transition)
                         }
                     }
                     .padding(.top, 18)
@@ -69,6 +73,7 @@ struct ArchiveView: View {
         .toolbarBackground(.visible, for: .navigationBar)
         .navigationDestination(item: $selectedRun) { run in
             ReceiptView(run: run)
+                .navigationTransition(.zoom(sourceID: run.id, in: transition))
         }
         .task {
             // -openReceipt opens the first stored run directly, which gives
