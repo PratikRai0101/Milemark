@@ -17,7 +17,7 @@ struct TrackingView: View {
     @State private var isReviewing = false
     @State private var draftTitle = ""
     @State private var draftNote = ""
-    @State private var tick = Date.now
+    @State private var printedRun: Run?
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -40,22 +40,24 @@ struct TrackingView: View {
                 recorder.start()
             }
         }
-        .onReceive(ticker) { now in
-            tick = now
-            recorder.tick(now: now)
+        .onReceive(ticker) { _ in
+            recorder.tick()
         }
         .onChange(of: scenePhase) { _, phase in
-            // Recording must continue while the phone is locked or in a pocket.
-            if phase == .background, recorder.phase == .recording {
-                recorder.pause()
-            }
+            // Recording continues while the phone is locked or in a pocket:
+            // the location manager keeps the track, and the clock is counted
+            // by the recorder rather than by this view. Pausing here would
+            // silently end a run the moment the screen went dark.
+        }
+        .navigationDestination(item: $printedRun) { run in
+            ReceiptView(run: run)
         }
         .sheet(isPresented: $isReviewing) {
             ReviewSheet(
                 title: $draftTitle,
                 note: $draftNote,
                 distanceKilometres: recorder.distanceMeters / 1000,
-                elapsed: recorder.elapsedTime,
+                elapsed: recorder.elapsedTime(),
                 pace: recorder.paceSecondsPerKm,
                 onCancel: { isReviewing = false },
                 onPrint: { title, note in
@@ -67,7 +69,7 @@ struct TrackingView: View {
                     )
                     store.add(run)
                     isReviewing = false
-                    recorder.reset()
+                    printedRun = run
                     return run
                 }
             )
@@ -148,7 +150,7 @@ struct TrackingView: View {
             }
 
             HStack {
-                metric(value: Format.duration(recorder.elapsedTime), label: "Elapsed time")
+                metric(value: Format.duration(recorder.elapsedTime()), label: "Elapsed time")
                 Spacer()
                 metric(value: Format.pace(recorder.paceSecondsPerKm), label: "Avg pace /km")
             }
