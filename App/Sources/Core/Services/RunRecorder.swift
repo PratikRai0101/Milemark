@@ -63,8 +63,9 @@ public final class RunRecorder: NSObject {
     /// counting when the phone is locked and the app is suspended.
     public func elapsedTime() -> TimeInterval {
         guard let startedAt else { return 0 }
-        let paused = accumulatedPause + (pausedAt.map { now.timeIntervalSince($0) } ?? 0)
-        return max(0, now.timeIntervalSince(startedAt) - paused)
+        let moment = clock()
+        let paused = accumulatedPause + (pausedAt.map { moment.timeIntervalSince($0) } ?? 0)
+        return max(0, moment.timeIntervalSince(startedAt) - paused)
     }
 
     /// The time the route actually covers.
@@ -236,9 +237,10 @@ public final class RunRecorder: NSObject {
             currentSpeedMetersPerSecond = point.speed
 
             guard phase == .recording else { continue }
-            // The recorder's clock is the reference, not the wall clock, so a
-            // sample is judged against the same time as everything else.
-            guard RouteGeometry.isAcceptable(point, now: now) else {
+            // A sample is judged against the clock, not against the last
+            // tick: while the app is suspended no tick arrives, and a good
+            // fix would be thrown away as stale.
+            guard RouteGeometry.isAcceptable(point, now: clock()) else {
                 if point.horizontalAccuracy < 0 {
                     locationStatus = .weak
                 }
@@ -329,6 +331,9 @@ public final class RunRecorder: NSObject {
         // The clock is not ticked here: the tick that led to this check has
         // already been counted, and ticking again would call straight back
         // into this method.
+        //
+        // An automatic pause is a real pause, so the clock stops with it.
+        pausedAt = now
         phase = .paused
         isAutoPaused = true
     }

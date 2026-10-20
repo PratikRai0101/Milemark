@@ -126,6 +126,66 @@ final class RunRecorderTests: XCTestCase {
         XCTAssertEqual(recorder.elapsedTime(), 60, accuracy: 0.5)
     }
 
+    func testTheClockIsReadEvenWithoutATick() {
+        let recorder = recorder()
+        var moment = Date()
+        recorder.clock = { moment }
+        recorder.prepare()
+        recorder.start()
+
+        // A minute passes with no tick at all: the app was suspended.
+        moment = moment.addingTimeInterval(60)
+        XCTAssertEqual(recorder.elapsedTime(), 60, accuracy: 0.5)
+    }
+
+    func testAnAutomaticPauseStopsTheClock() {
+        let recorder = recorder()
+        let start = Date()
+        var moment = start
+        recorder.clock = { moment }
+        recorder.prepare()
+        recorder.start()
+
+        // Cover some ground, then stand still.
+        for index in 0..<5 {
+            recorder.ingest([
+                RoutePoint(
+                    latitude: 1.3000 + Double(index) * 0.0002,
+                    longitude: 103.8000,
+                    altitude: 0,
+                    timestamp: start.addingTimeInterval(Double(index) * 2),
+                    horizontalAccuracy: 5,
+                    speed: 3
+                )
+            ])
+        }
+        recorder.ingest([
+            RoutePoint(
+                latitude: 1.3008,
+                longitude: 103.8000,
+                altitude: 0,
+                timestamp: start.addingTimeInterval(10),
+                horizontalAccuracy: 5,
+                speed: 0
+            )
+        ])
+
+        moment = start.addingTimeInterval(32)
+        recorder.tick()
+        XCTAssertEqual(recorder.phase, .paused)
+        XCTAssertTrue(recorder.isAutoPaused)
+
+        // The clock stopped with the pause.
+        let atPause = recorder.elapsedTime()
+        moment = start.addingTimeInterval(180)
+        XCTAssertEqual(recorder.elapsedTime(), atPause, accuracy: 0.5)
+
+        // Resuming starts the clock again.
+        recorder.resume()
+        moment = start.addingTimeInterval(190)
+        XCTAssertEqual(recorder.elapsedTime(), atPause + 10, accuracy: 0.5)
+    }
+
     func testAutoPauseWaitsForARealStop() {
         let recorder = recorder()
         var moment = Date()
