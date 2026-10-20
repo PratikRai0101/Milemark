@@ -61,10 +61,10 @@ final class MilemarkUITests: XCTestCase {
         XCTAssertTrue(waitFor(route))
         route.tap()
 
-        XCTAssertTrue(waitFor(app.staticTexts["Run receipt"]))
+        XCTAssertTrue(waitFor(app.staticTexts["Printed record"]))
         XCTAssertTrue(app.staticTexts["INTERVAL"].exists)
         XCTAssertTrue(app.staticTexts["9.34 KM"].exists)
-        XCTAssertTrue(app.staticTexts["A route worth keeping."].exists)
+        XCTAssertTrue(app.staticTexts["PRINTED ON THIS PHONE"].exists)
     }
 
     func testGraphicPickerChangesTheTreatment() {
@@ -72,7 +72,7 @@ final class MilemarkUITests: XCTestCase {
         let route = button(startingWith: "Interval")
         XCTAssertTrue(waitFor(route))
         route.tap()
-        XCTAssertTrue(waitFor(app.staticTexts["Run receipt"]))
+        XCTAssertTrue(waitFor(app.staticTexts["Printed record"]))
 
         // The labelled badge opens the explicit chooser.
         let badge = button(startingWith: "Change receipt graphic")
@@ -96,7 +96,7 @@ final class MilemarkUITests: XCTestCase {
         let route = button(startingWith: "Interval")
         XCTAssertTrue(waitFor(route))
         route.tap()
-        XCTAssertTrue(waitFor(app.staticTexts["Run receipt"]))
+        XCTAssertTrue(waitFor(app.staticTexts["Printed record"]))
 
         let grip = tearGrip
         XCTAssertTrue(waitFor(grip))
@@ -107,7 +107,7 @@ final class MilemarkUITests: XCTestCase {
 
         // Released short of the threshold, the receipt is still on screen and
         // the grip is still there to pull again.
-        XCTAssertTrue(app.staticTexts["Run receipt"].exists)
+        XCTAssertTrue(app.staticTexts["Printed record"].exists)
         XCTAssertTrue(app.staticTexts["INTERVAL"].exists)
         XCTAssertTrue(tearGrip.exists)
     }
@@ -117,7 +117,7 @@ final class MilemarkUITests: XCTestCase {
         let route = button(startingWith: "Interval")
         XCTAssertTrue(waitFor(route))
         route.tap()
-        XCTAssertTrue(waitFor(app.staticTexts["Run receipt"]))
+        XCTAssertTrue(waitFor(app.staticTexts["Printed record"]))
 
         let tear = button(startingWith: "Tear off")
         XCTAssertTrue(waitFor(tear))
@@ -132,7 +132,7 @@ final class MilemarkUITests: XCTestCase {
         let route = button(startingWith: "Interval")
         XCTAssertTrue(waitFor(route))
         route.tap()
-        XCTAssertTrue(waitFor(app.staticTexts["Run receipt"]))
+        XCTAssertTrue(waitFor(app.staticTexts["Printed record"]))
 
         let share = button(startingWith: "Share")
         XCTAssertTrue(waitFor(share))
@@ -140,6 +140,6 @@ final class MilemarkUITests: XCTestCase {
 
         XCTAssertTrue(waitFor(app.staticTexts["Share preview"]))
         XCTAssertTrue(app.staticTexts["Trim route ends"].exists)
-        XCTAssertTrue(app.staticTexts["A ROUTE WORTH KEEPING"].exists)
+        XCTAssertTrue(app.staticTexts["A ROUTE, PRINTED"].exists)
     }
 }
