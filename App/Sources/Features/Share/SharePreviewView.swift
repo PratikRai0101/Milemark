@@ -61,7 +61,7 @@ struct SharePreviewView: View {
                 }
                 .font(Theme.Font.action)
                 .frame(maxWidth: .infinity)
-                .frame(height: 52)
+                .frame(minHeight: 52)
                 .background(Theme.ink, in: Capsule())
                 .foregroundStyle(Theme.ground)
             } else {
@@ -80,7 +80,7 @@ struct SharePreviewView: View {
             }
 
             Text("The image contains only what is shown above: the route, the three values and the optional note. No date, time or location.")
-                .font(.system(size: 11))
+                .font(Theme.Font.footnote)
                 .foregroundStyle(Theme.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -93,7 +93,7 @@ struct SharePreviewView: View {
     /// anywhere by the app itself: it is handed to the system share sheet and
     /// the user decides where it goes.
     private func writeImage() -> URL? {
-        let renderer = ImageRenderer(content: previewCard)
+        let renderer = ImageRenderer(content: previewCard.dynamicTypeSize(.large))
         renderer.scale = 3
         renderer.proposedSize = ProposedViewSize(width: 340, height: 480)
         guard let image = renderer.uiImage, let data = image.pngData() else { return nil }
@@ -110,22 +110,28 @@ struct SharePreviewView: View {
     }
 
     /// The card that is actually exported, with no app chrome around it.
+    ///
+    /// The type here is held at a fixed size on purpose. This is an artefact
+    /// with a fixed canvas: it is rendered to a 340 × 480 image and handed to
+    /// the system share sheet, so its composition must not change because the
+    /// reader happens to have large text set. The app's own chrome around it
+    /// does scale.
     private var previewCard: some View {
         VStack(spacing: 0) {
             Text("A ROUTE, PRINTED")
-                .font(.system(size: 11, design: .monospaced))
+                .font(Theme.Font.footnote)
                 .tracking(0.5)
                 .foregroundStyle(Theme.paperSecondary)
                 .padding(.top, 18)
 
             Text(run.title)
-                .font(.system(size: 17, weight: .semibold, design: .monospaced))
+                .font(Theme.Font.value)
                 .foregroundStyle(Theme.paperInk)
                 .multilineTextAlignment(.center)
                 .padding(.top, 5)
 
             Text("MILEMARK")
-                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .font(Theme.Font.labelStrong)
                 .tracking(0.6)
                 .foregroundStyle(Theme.paperSecondary)
                 .padding(.top, 6)
@@ -149,14 +155,14 @@ struct SharePreviewView: View {
 
             if includesNote, !run.note.isEmpty {
                 Text(run.note)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(Theme.Font.footnote)
                     .foregroundStyle(Theme.paperInk)
                     .multilineTextAlignment(.center)
                     .padding(.top, 9)
             }
 
             Text("A route, printed.")
-                .font(.system(size: 12, design: .monospaced))
+                .font(Theme.Font.footnote)
                 .foregroundStyle(Theme.paperInk)
                 .padding(.top, 9)
                 .padding(.bottom, 16)
@@ -172,16 +178,19 @@ struct SharePreviewView: View {
 
     private var preview: some View {
         previewCard
+            // The exported image is a fixed canvas, so the card is held at a
+            // fixed type size. The preview shows exactly what will be shared.
+            .dynamicTypeSize(.large)
             .padding(.top, 8)
     }
 
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(spacing: 1) {
             Text(value)
-                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .font(Theme.Font.metricValue)
                 .foregroundStyle(Theme.paperInk)
             Text(label)
-                .font(.system(size: 11, design: .monospaced))
+                .font(Theme.Font.footnote)
                 .foregroundStyle(Theme.paperSecondary)
         }
         .frame(maxWidth: .infinity)
@@ -191,7 +200,7 @@ struct SharePreviewView: View {
         VStack(spacing: 0) {
             Toggle(isOn: $trimsEnds) {
                 Text("Trim route ends")
-                    .font(.system(size: 14))
+                    .font(.body)
             }
             .onChange(of: trimsEnds) { _, _ in
                 // The prepared image no longer matches what is shown.
@@ -202,7 +211,7 @@ struct SharePreviewView: View {
 
             Toggle(isOn: $includesNote) {
                 Text("Include note")
-                    .font(.system(size: 14))
+                    .font(.body)
             }
             .onChange(of: includesNote) { _, _ in
                 exportedFile = nil
@@ -213,13 +222,13 @@ struct SharePreviewView: View {
             Divider().overlay(Theme.rule)
 
             Text(privacyCopy)
-                .font(.system(size: 11))
+                .font(Theme.Font.footnote)
                 .foregroundStyle(Theme.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 12)
 
             Text("Nothing is sent unless you choose to share it.")
-                .font(.system(size: 11))
+                .font(Theme.Font.footnote)
                 .foregroundStyle(Theme.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 8)

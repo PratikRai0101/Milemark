@@ -7,10 +7,15 @@ import SwiftUI
 /// people recognise, not a row of numbers.
 struct ArchiveView: View {
     @Environment(RunStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selectedRun: Run?
     @Namespace private var transition
 
-    private let columns = [GridItem(.adaptive(minimum: 104), spacing: 11)]
+    /// The cards become one across at the larger text sizes, because a
+    /// narrow card cannot hold the text inside it.
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: Theme.cardMinimum(for: dynamicTypeSize)), spacing: 11)]
+    }
 
     var body: some View {
         ScrollView {
@@ -64,7 +69,7 @@ struct ArchiveView: View {
                     SettingsView()
                 } label: {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 17))
+                        .font(Theme.Font.metricValue)
                 }
                 .accessibilityLabel("About Milemark")
             }
@@ -114,16 +119,29 @@ struct ArchiveView: View {
         Button {
             store.loadSampleActivities()
         } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "square.and.arrow.down")
-                Text("Load sample activities")
-                Spacer()
-                Text("9 runs")
+            // The count sits beside the label when there is room, and below
+            // it when there is not.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    Image(systemName: "square.and.arrow.down")
+                    Text("Load sample activities")
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    Text("9 runs")
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "square.and.arrow.down")
+                        Text("Load sample activities")
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Text("9 runs")
+                }
             }
             .font(Theme.Font.label)
             .foregroundStyle(Theme.secondary)
             .padding(.horizontal, 12)
-            .frame(height: 44)
+            .frame(minHeight: 44)
             .background(Theme.tile, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -140,7 +158,7 @@ struct ArchiveView: View {
                 .font(Theme.Font.screenTitle)
                 .foregroundStyle(Theme.ink)
             Text("Your first run becomes your first receipt.")
-                .font(.system(size: 13))
+                .font(.body)
                 .foregroundStyle(Theme.secondary)
                 .multilineTextAlignment(.center)
             NavigationLink {
@@ -149,7 +167,7 @@ struct ArchiveView: View {
                 Text("Record a run")
                     .font(Theme.Font.action)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 52)
+                    .frame(minHeight: 52)
                     .background(Theme.ink, in: Capsule())
                     .foregroundStyle(Theme.ground)
             }
@@ -162,7 +180,7 @@ struct ArchiveView: View {
                 Text("Load sample activities")
                     .font(Theme.Font.action)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 48)
+                    .frame(minHeight: 48)
                     .background(Theme.tile, in: Capsule())
                     .foregroundStyle(Theme.ink)
             }

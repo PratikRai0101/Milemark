@@ -18,6 +18,8 @@ struct ReviewSheet: View {
     let onPrint: (String, String) -> Run
 
     @Environment(\.dismiss) private var dismiss
+    /// The distance is the headline of the review, so it scales.
+    @ScaledMetric(relativeTo: .largeTitle) private var reviewDistanceSize: CGFloat = 43
 
     var body: some View {
         NavigationStack {
@@ -29,19 +31,28 @@ struct ReviewSheet: View {
 
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text(String(format: "%.2f", distanceKilometres))
-                            .font(.system(size: 43, weight: .bold, design: .monospaced))
+                            .font(.system(size: reviewDistanceSize, weight: .bold, design: .monospaced))
                             .foregroundStyle(Theme.ink)
                             .contentTransition(.numericText())
                         Text("km")
-                            .font(.system(size: 16))
+                            .font(.body)
                             .foregroundStyle(Theme.secondary)
                     }
                     .padding(.top, 6)
 
-                    HStack {
-                        fact(Format.duration(elapsed), "Elapsed time")
-                        Spacer()
-                        fact(Format.pace(pace), "Avg pace /km")
+                    // The two facts sit side by side when there is room. When
+                    // there is not, they become a column: side by side, the
+                    // labels break mid-word.
+                    ViewThatFits(in: .horizontal) {
+                        HStack {
+                            fact(Format.duration(elapsed), "Elapsed time")
+                            Spacer()
+                            fact(Format.pace(pace), "Avg pace /km")
+                        }
+                        VStack(alignment: .leading, spacing: 14) {
+                            fact(Format.duration(elapsed), "Elapsed time")
+                            fact(Format.pace(pace), "Avg pace /km")
+                        }
                     }
                     .padding(.vertical, 16)
                     .overlay(alignment: .bottom) {
@@ -49,12 +60,12 @@ struct ReviewSheet: View {
                     }
 
                     Text("Run title")
-                        .font(.system(size: 12))
+                        .font(.footnote)
                         .foregroundStyle(Theme.secondary)
                         .padding(.top, 16)
                     TextField("Run title", text: $title)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 16))
+                        .font(.body)
                         .padding(12)
                         .background(Theme.paper, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .overlay {
@@ -63,13 +74,13 @@ struct ReviewSheet: View {
                         }
 
                     Text("Note · optional")
-                        .font(.system(size: 12))
+                        .font(.footnote)
                         .foregroundStyle(Theme.secondary)
                         .padding(.top, 14)
                     TextField("Something worth remembering.", text: $note, axis: .vertical)
                         .textFieldStyle(.plain)
                         .lineLimit(2...4)
-                        .font(.system(size: 16))
+                        .font(.body)
                         .padding(12)
                         .frame(minHeight: 76, alignment: .topLeading)
                         .background(Theme.paper, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -113,11 +124,14 @@ struct ReviewSheet: View {
     private func fact(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
-                .font(.system(size: 17, weight: .semibold, design: .monospaced))
+                .font(Theme.Font.value)
                 .foregroundStyle(Theme.ink)
             Text(label)
                 .font(Theme.Font.label)
                 .foregroundStyle(Theme.secondary)
+                // The label keeps its words whole. A label broken across two
+                // lines mid-word is not readable.
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

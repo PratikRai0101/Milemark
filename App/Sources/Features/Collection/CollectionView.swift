@@ -7,6 +7,7 @@ import SwiftUI
 /// route someone chose to keep, not a statistic.
 struct CollectionView: View {
     @Environment(RunStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var collected: [Run] {
         store.runs.filter(\.isCollected)
@@ -20,7 +21,7 @@ struct CollectionView: View {
                         .padding(.top, 60)
                 } else {
                     LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 104), spacing: 11)],
+                        columns: [GridItem(.adaptive(minimum: Theme.cardMinimum(for: dynamicTypeSize)), spacing: 11)],
                         spacing: 11
                     ) {
                         ForEach(collected) { run in
@@ -55,7 +56,7 @@ struct CollectionView: View {
                 .font(Theme.Font.screenTitle)
                 .foregroundStyle(Theme.ink)
             Text("Open a receipt and keep it, and it stays here.")
-                .font(.system(size: 13))
+                .font(.body)
                 .foregroundStyle(Theme.secondary)
                 .multilineTextAlignment(.center)
         }

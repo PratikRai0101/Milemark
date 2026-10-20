@@ -19,6 +19,9 @@ struct TrackingView: View {
     @State private var draftTitle = ""
     @State private var draftNote = ""
     @State private var printedRun: Run?
+    /// The live distance is the hero of the screen, so it scales with the
+    /// reader's text size rather than staying fixed.
+    @ScaledMetric(relativeTo: .largeTitle) private var liveDistanceSize: CGFloat = 56
     @State private var saveFailed = false
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -59,6 +62,15 @@ struct TrackingView: View {
             Button("Try again") { saveFailed = false }
         } message: {
             Text(store.lastError ?? "The runs file could not be written. The recording has been kept so you can try again.")
+        }
+        .task {
+            // -openReview shows the review step on its own, so a screenshot
+            // or a UI check can be taken of it without recording a run first.
+            if ProcessInfo.processInfo.arguments.contains("-openReview") {
+                draftTitle = "Outdoor run"
+                draftNote = "Six reps around the block. Legs gone by the fourth."
+                isReviewing = true
+            }
         }
         .sheet(isPresented: $isReviewing) {
             ReviewSheet(
@@ -116,7 +128,7 @@ struct TrackingView: View {
                     followsRunner = true
                 } label: {
                     Image(systemName: "location.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(Theme.Font.body)
                         .frame(width: 44, height: 44)
                         .background(.regularMaterial, in: Circle())
                 }
@@ -166,18 +178,27 @@ struct TrackingView: View {
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(String(format: "%.2f", recorder.distanceMeters / 1000))
-                    .font(Theme.Font.liveDistance)
+                    .font(.system(size: liveDistanceSize, weight: .bold, design: .monospaced))
                     .foregroundStyle(Theme.ink)
                     .contentTransition(.numericText())
                 Text("km")
-                    .font(.system(size: 17))
+                    .font(Theme.Font.value)
                     .foregroundStyle(Theme.secondary)
             }
 
-            HStack {
-                metric(value: Format.duration(recorder.elapsedTime()), label: "Elapsed time")
-                Spacer()
-                metric(value: Format.pace(recorder.paceSecondsPerKm), label: "Avg pace /km")
+            // The two figures sit side by side when there is room. When there
+            // is not, they become a column rather than squeezing their own
+            // labels into an ellipsis.
+            ViewThatFits(in: .horizontal) {
+                HStack {
+                    metric(value: Format.duration(recorder.elapsedTime()), label: "Elapsed time")
+                    Spacer()
+                    metric(value: Format.pace(recorder.paceSecondsPerKm), label: "Avg pace /km")
+                }
+                VStack(alignment: .leading, spacing: 10) {
+                    metric(value: Format.duration(recorder.elapsedTime()), label: "Elapsed time")
+                    metric(value: Format.pace(recorder.paceSecondsPerKm), label: "Avg pace /km")
+                }
             }
 
             buttons
@@ -185,6 +206,7 @@ struct TrackingView: View {
             Text(hintText)
                 .font(Theme.Font.label)
                 .foregroundStyle(Theme.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 20)
         .padding(.top, 18)
@@ -195,7 +217,7 @@ struct TrackingView: View {
     private func metric(value: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(value)
-                .font(.system(size: 17, weight: .semibold, design: .monospaced))
+                .font(Theme.Font.value)
                 .foregroundStyle(Theme.ink)
                 .contentTransition(.numericText())
             Text(label)
@@ -314,7 +336,7 @@ struct PrimaryActionStyle: ButtonStyle {
         configuration.label
             .font(Theme.Font.action)
             .frame(maxWidth: .infinity)
-            .frame(height: 52)
+            .frame(minHeight: 52)
             .background(Theme.ink, in: Capsule())
             .foregroundStyle(Theme.ground)
             .opacity(configuration.isPressed ? 0.86 : 1)
@@ -328,7 +350,7 @@ struct SecondaryActionStyle: ButtonStyle {
         configuration.label
             .font(Theme.Font.action)
             .frame(maxWidth: .infinity)
-            .frame(height: 52)
+            .frame(minHeight: 52)
             .background(Theme.tile, in: Capsule())
             .foregroundStyle(Theme.ink)
             .opacity(configuration.isPressed ? 0.86 : 1)
