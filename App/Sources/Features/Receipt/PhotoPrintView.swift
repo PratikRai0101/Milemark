@@ -178,13 +178,23 @@ struct PhotoPrintView: View {
         return UIImage(contentsOfFile: url.path)
     }
 
+    /// The picture as it should be drawn, the right way up.
+    private func oriented(_ image: UIImage) -> CGImage? {
+        guard image.imageOrientation != .up else { return image.cgImage }
+        let renderer = UIGraphicsImageRenderer(size: image.size)
+        let redrawn = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: image.size))
+        }
+        return redrawn.cgImage
+    }
+
     /// Samples the image down to a grid of tones.
     ///
     /// The picture is drawn the way it was taken, and cropped to fill rather
     /// than stretched: a portrait photograph should print as a portrait
     /// photograph.
     private func sample(_ image: UIImage) {
-        guard let cgImage = image.cgImage else { return }
+        guard let cgImage = oriented(image) else { return }
         var pixels = [UInt8](repeating: 0, count: gridWidth * gridHeight)
         let drawn: Bool = pixels.withUnsafeMutableBytes { buffer -> Bool in
             guard let context = CGContext(
@@ -198,11 +208,14 @@ struct PhotoPrintView: View {
             ) else { return false }
             context.interpolationQuality = .low
 
-            // Fill the grid with the picture, cropped to fill and keeping its
-            // own proportions.
-            let source = CGRect(origin: .zero, size: cgImage.width > 0 && cgImage.height > 0
-                ? CGSize(width: cgImage.width, height: cgImage.height)
-                : CGSize(width: 1, height: 1))
+            // The picture is cropped to fill the grid, keeping its own
+            // proportions, and it is turned the way it was taken.
+            let source = CGRect(
+                x: 0,
+                y: 0,
+                width: CGFloat(max(cgImage.width, 1)),
+                height: CGFloat(max(cgImage.height, 1))
+            )
             let target = CGRect(x: 0, y: 0, width: gridWidth, height: gridHeight)
             let scale = max(target.width / source.width, target.height / source.height)
             let drawn = CGRect(
@@ -211,8 +224,12 @@ struct PhotoPrintView: View {
                 width: source.width * scale,
                 height: source.height * scale
             )
-            context.translateBy(x: -drawn.origin.x, y: -drawn.origin.y)
+            // The crop is done by clipping, so the picture is centred rather
+            // than anchored at the corner.
+            context.saveGState()
+            context.clip(to: target)
             context.draw(cgImage, in: drawn)
+            context.restoreGState()
             return true
         }
         guard drawn else { NSLog("PHOTO draw failed"); return }
