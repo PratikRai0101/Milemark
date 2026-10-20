@@ -22,6 +22,7 @@ struct ReceiptView: View {
     @State private var showShare = false
     @State private var showGraphicPicker = false
     @State private var photoItem: PhotosPickerItem?
+    @State private var photoTreatment: PhotoTreatment = .halftone
     @State private var graphicChanged = false
     @State private var viewportHeight: CGFloat = 0
     @State private var gripBottom: CGFloat = 0
@@ -29,6 +30,13 @@ struct ReceiptView: View {
     init(run: Run) {
         self.run = run
         _isCollected = State(initialValue: run.isCollected)
+        // -treatment=halftone|dither|poster opens a treatment directly.
+        if let requested = ProcessInfo.processInfo.arguments
+            .first(where: { $0.hasPrefix("-treatment=") })?
+            .replacingOccurrences(of: "-treatment=", with: ""),
+           let requested = PhotoTreatment(rawValue: requested) {
+            _photoTreatment = State(initialValue: requested)
+        }
         // -graphic=ascii|pace|photo opens the receipt in a given treatment,
         // for screenshots and UI checks.
         if let requested = ProcessInfo.processInfo.arguments
@@ -50,6 +58,7 @@ struct ReceiptView: View {
                     showGraphicPicker: $showGraphicPicker,
                     tearProgress: $tearProgress,
                     photoItem: $photoItem,
+                    photoTreatment: $photoTreatment,
                     comparisonRun: store.similarRun(to: run),
                     isAtEnd: isAtEnd,
                     onTear: { tearOff() }
@@ -208,6 +217,8 @@ struct ReceiptPaper: View {
     @Binding var showGraphicPicker: Bool
     @Binding var tearProgress: CGFloat
     @Binding var photoItem: PhotosPickerItem?
+    /// How the photograph is printed.
+    @Binding var photoTreatment: PhotoTreatment
     /// The last time the same route was run, when there was one.
     let comparisonRun: Run?
     /// Whether the receipt has been scrolled to the end of the paper.
@@ -309,7 +320,7 @@ struct ReceiptPaper: View {
         VStack(spacing: 0) {
             // The picture. It is the whole of the printed plate, so nothing
             // is ever laid over the route.
-            ReceiptGraphicView(graphic: graphic, run: run, photoItem: photoItem)
+            ReceiptGraphicView(graphic: graphic, run: run, photoItem: photoItem, photoTreatment: photoTreatment)
                 .frame(maxWidth: .infinity)
                 .frame(height: 218)
                 .clipped()
@@ -317,23 +328,29 @@ struct ReceiptPaper: View {
             // The caption sits on a strip below the picture, the way a label
             // sits under a plate, rather than over the top of it.
             HStack(spacing: 8) {
-                Button {
-                    showGraphicPicker = true
-                } label: {
-                    HStack(spacing: 5) {
-                        Text(graphic.title)
-                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 9, weight: .semibold))
+                // When the photograph is showing, the treatment chips are the
+                // caption, so the picture is not named twice.
+                if graphic != .photo {
+                    Button {
+                        showGraphicPicker = true
+                    } label: {
+                        HStack(spacing: 5) {
+                            Text(graphic.title)
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                .lineLimit(1)
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.system(size: 9, weight: .semibold))
+                        }
+                        .foregroundStyle(Theme.paperInk)
+                        .fixedSize()
+                        .padding(.horizontal, 9)
+                        .frame(height: 24)
+                        .background(Theme.paper, in: Capsule())
                     }
-                    .foregroundStyle(Theme.paperInk)
-                    .padding(.horizontal, 9)
-                    .frame(height: 24)
-                    .background(Theme.paper, in: Capsule())
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Change receipt graphic, currently \(graphic.title)")
+                    .accessibilityIdentifier("graphic-badge")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Change receipt graphic, currently \(graphic.title)")
-                .accessibilityIdentifier("graphic-badge")
 
                 if graphic == .photo {
                     PhotosPicker(selection: $photoItem, matching: .images) {
@@ -345,6 +362,27 @@ struct ReceiptPaper: View {
                             .background(Theme.paper, in: Capsule())
                     }
                     .accessibilityLabel("Choose a photo to print")
+
+                    // The same photograph can be printed several ways.
+                    ForEach(PhotoTreatment.allCases) { treatment in
+                        Button {
+                            photoTreatment = treatment
+                        } label: {
+                            Text(treatment.title)
+                                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                                .lineLimit(1)
+                                .fixedSize()
+                                .foregroundStyle(photoTreatment == treatment ? Theme.ground : Theme.paperInk)
+                                .padding(.horizontal, 8)
+                                .frame(height: 24)
+                                .background(
+                                    photoTreatment == treatment ? Theme.paperInk : Theme.paper,
+                                    in: Capsule()
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Print the photo as \(treatment.title)")
+                    }
                 }
 
                 Spacer()
