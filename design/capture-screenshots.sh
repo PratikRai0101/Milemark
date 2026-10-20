@@ -40,8 +40,9 @@ capture() {
   xcrun simctl launch "$DEVICE" "$BUNDLE" "$@" > /dev/null
   sleep 7
   xcrun simctl io "$DEVICE" screenshot "$OUT/$name.png" > /dev/null 2>&1
-  # Keep the readme light: the images are shown at half width.
-  sips -Z 620 "$OUT/$name.png" > /dev/null
+  # Keep the readme light without going soft: the source is 3x, and the
+  # images are shown at about a third of a column.
+  sips --resampleWidth 900 "$OUT/$name.png" > /dev/null
   echo "  $OUT/$name.png"
 }
 
@@ -68,7 +69,7 @@ for step in 1 2 3 4 5 6; do
 done
 sleep 3
 xcrun simctl io "$DEVICE" screenshot "$OUT/07-tracking.png" > /dev/null 2>&1
-sips -Z 620 "$OUT/07-tracking.png" > /dev/null
+sips --resampleWidth 900 "$OUT/07-tracking.png" > /dev/null
 echo "  $OUT/07-tracking.png"
 
 echo "Done."
