@@ -62,17 +62,25 @@ struct PhotoPrintView: View {
             guard let loaded = await loadImage() else { return }
             image = loaded
             sample(loaded)
+            // The print starts once there is something to print.
+            startPrinting()
         }
         .task(id: treatment) {
-            // Reduced motion: the picture is printed, it does not travel.
-            if reduceMotion {
-                printed = 1
-                return
-            }
-            printed = 0
-            withAnimation(.linear(duration: 0.45)) { printed = 1 }
+            startPrinting()
         }
         .accessibilityLabel("Photographic print treatment")
+    }
+
+    /// Prints the picture.
+    ///
+    /// Reduced motion: the picture is printed, it does not travel.
+    private func startPrinting() {
+        if reduceMotion {
+            printed = 1
+            return
+        }
+        printed = 0
+        withAnimation(.linear(duration: 0.45)) { printed = 1 }
     }
 
     // MARK: - Drawing
@@ -168,6 +176,10 @@ struct PhotoPrintView: View {
     }
 
     /// Samples the image down to a grid of tones.
+    ///
+    /// The picture is drawn the way it was taken, and cropped to fill rather
+    /// than stretched: a portrait photograph should print as a portrait
+    /// photograph.
     private func sample(_ image: UIImage) {
         guard let cgImage = image.cgImage else { return }
         var pixels = [UInt8](repeating: 0, count: gridWidth * gridHeight)
@@ -182,7 +194,22 @@ struct PhotoPrintView: View {
                 bitmapInfo: CGImageAlphaInfo.none.rawValue
             ) else { return false }
             context.interpolationQuality = .low
-            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: gridWidth, height: gridHeight))
+
+            // Fill the grid with the picture, cropped to fill and keeping its
+            // own proportions.
+            let source = CGRect(origin: .zero, size: cgImage.width > 0 && cgImage.height > 0
+                ? CGSize(width: cgImage.width, height: cgImage.height)
+                : CGSize(width: 1, height: 1))
+            let target = CGRect(x: 0, y: 0, width: gridWidth, height: gridHeight)
+            let scale = max(target.width / source.width, target.height / source.height)
+            let drawn = CGRect(
+                x: target.midX - source.width * scale / 2,
+                y: target.midY - source.height * scale / 2,
+                width: source.width * scale,
+                height: source.height * scale
+            )
+            context.translateBy(x: -drawn.origin.x, y: -drawn.origin.y)
+            context.draw(cgImage, in: drawn)
             return true
         }
         guard drawn else { return }
