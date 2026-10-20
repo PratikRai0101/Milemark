@@ -1,3 +1,4 @@
+import Combine
 import CoreLocation
 import MapKit
 import SwiftUI
@@ -147,10 +148,6 @@ struct TrackingView: View {
     /// rather than pretending to record a route it cannot see.
     private var canRecord: Bool {
         recorder.locationStatus != .denied && recorder.locationStatus != .restricted
-    }
-
-    private func recentre() {
-        followsRunner = true
     }
 
     // MARK: - Controls

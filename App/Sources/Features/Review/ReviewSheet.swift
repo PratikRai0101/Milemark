@@ -84,7 +84,7 @@ struct ReviewSheet: View {
                         .padding(.top, 10)
 
                     Button {
-                        onPrint(title, note)
+                        _ = onPrint(title, note)
                     } label: {
                         Label("Print receipt", systemImage: "arrow.down")
                     }

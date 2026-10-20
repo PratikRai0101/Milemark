@@ -16,7 +16,6 @@ struct ReceiptView: View {
     let run: Run
 
     @State private var graphic: ReceiptGraphic = .route
-    @State private var isFeeding = true
     @State private var isCollected: Bool
     @State private var isTearing = false
     @State private var tearOpacity: Double = 1
@@ -25,7 +24,6 @@ struct ReceiptView: View {
     @State private var showGraphicPicker = false
     @State private var photoItem: PhotosPickerItem?
     @State private var photoTreatment: PhotoTreatment = .halftone
-    @State private var graphicChanged = false
     @State private var viewportHeight: CGFloat = 0
     @State private var gripBottom: CGFloat = 0
 
@@ -56,7 +54,6 @@ struct ReceiptView: View {
                 ReceiptPaper(
                     run: run,
                     graphic: $graphic,
-                    isFeeding: isFeeding,
                     showGraphicPicker: $showGraphicPicker,
                     tearProgress: $tearProgress,
                     photoItem: $photoItem,
@@ -88,9 +85,6 @@ struct ReceiptView: View {
         .toolbar(.hidden, for: .tabBar)
         .safeAreaInset(edge: .bottom) {
             actions
-        }
-        .onAppear {
-            isFeeding = true
         }
         .sheet(isPresented: $showShare) {
             SharePreviewView(run: run)
@@ -218,7 +212,6 @@ struct PrinterSlot: View {
 struct ReceiptPaper: View {
     let run: Run
     @Binding var graphic: ReceiptGraphic
-    let isFeeding: Bool
     @Binding var showGraphicPicker: Bool
     @Binding var tearProgress: CGFloat
     @Binding var photoItem: PhotosPickerItem?
