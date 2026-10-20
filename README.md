@@ -10,15 +10,40 @@ with the ends of the route trimmed.
 
 ## Screens
 
-| | | |
-|---|---|---|
-| ![The route archive](Screenshots/01-archive.png) | ![The printed receipt](Screenshots/02-receipt-route.png) | ![The route as a field of characters](Screenshots/03-receipt-ascii.png) |
-| **Runs** — every route as its own shape | **The receipt** — printed from a slot | **ASCII** — the same route, printed |
-| ![Pace per kilometre](Screenshots/04-receipt-pace.png) | ![Sharing the receipt](Screenshots/05-share.png) | ![Recording a run](Screenshots/07-tracking.png) |
-| **Pace** — inspectable per kilometre | **Share** — with the route ends trimmed | **Recording** — a quiet map, a vivid track |
+<table>
+<tr>
+<td width="33%" valign="top">
+<img src="Screenshots/01-archive.png" width="280" alt="The route archive: every run as its own shape, with its date and distance">
+<br><sub><b>Runs</b> — every route as its own shape</sub>
+</td>
+<td width="33%" valign="top">
+<img src="Screenshots/02-receipt-route.png" width="280" alt="The printed receipt: a route drawn on paper, with distance, pace, time and elevation">
+<br><sub><b>The receipt</b> — printed from a tray</sub>
+</td>
+<td width="33%" valign="top">
+<img src="Screenshots/03-receipt-ascii.png" width="280" alt="The same route printed as a field of the letters R, U and N">
+<br><sub><b>ASCII</b> — the same route, printed</sub>
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+<img src="Screenshots/04-receipt-pace.png" width="280" alt="A chart of pace for each kilometre of the run">
+<br><sub><b>Pace</b> — inspectable per kilometre</sub>
+</td>
+<td width="33%" valign="top">
+<img src="Screenshots/05-share.png" width="280" alt="The share preview, with the route ends trimmed and the note included">
+<br><sub><b>Share</b> — with the route ends trimmed</sub>
+</td>
+<td width="33%" valign="top">
+<img src="Screenshots/07-tracking.png" width="280" alt="Recording a run: a quiet map with a bright orange track">
+<br><sub><b>Recording</b> — a quiet map, a vivid track</sub>
+</td>
+</tr>
+</table>
 
 These are the real app running in the simulator, captured by
-[`design/capture-screenshots.sh`](design/capture-screenshots.sh).
+[`design/capture-screenshots.sh`](design/capture-screenshots.sh). The images
+are pinned to one width so they line up.
 
 ## Status
 

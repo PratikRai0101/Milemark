@@ -73,3 +73,18 @@ sips --resampleWidth 900 "$OUT/07-tracking.png" > /dev/null
 echo "  $OUT/07-tracking.png"
 
 echo "Done."
+
+# The readme lays the images out in a grid, so they have to be the same size.
+# A capture that produced a different frame would break the layout.
+sizes=$(for file in "$OUT"/*.png; do
+  sips -g pixelWidth -g pixelHeight "$file" 2>/dev/null \
+    | awk '/pixelWidth|pixelHeight/ { printf "%s ", $2 }'
+  echo
+done | sort -u)
+
+if [ "$(echo "$sizes" | wc -l | tr -d ' ')" -ne 1 ]; then
+  echo "Screenshots are not all the same size:" >&2
+  echo "$sizes" >&2
+  exit 1
+fi
+echo "All screenshots are $sizes"
