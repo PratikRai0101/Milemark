@@ -113,9 +113,10 @@ struct PhotoPrintView: View {
 
                 case .dither:
                     // An ordered dither: a fixed threshold pattern decides
-                    // whether each cell is inked.
+                    // whether each cell is inked. The dark parts of the
+                    // picture are the inked ones, like the dot screen.
                     let threshold = (Self.bayer[row % 4][column % 4] + 0.5) / 16
-                    guard tone > threshold else { continue }
+                    guard (1 - tone) > threshold else { continue }
                     let inset = min(cellWidth, cellHeight) * 0.12
                     let square = Path(CGRect(
                         x: centre.x - cellWidth / 2 + inset,
@@ -126,9 +127,10 @@ struct PhotoPrintView: View {
                     context.fill(square, with: .color(Theme.paperInk.opacity(isCurrent ? 1 : 0.9)))
 
                 case .poster:
-                    // A hard two-tone: ink or nothing.
+                    // A hard two-tone: ink or nothing. The dark parts of the
+                    // picture are the inked ones.
                     let adjusted = pow(tone, 0.75)
-                    guard adjusted > 0.52 else { continue }
+                    guard adjusted < 0.48 else { continue }
                     let square = Path(CGRect(
                         x: centre.x - cellWidth / 2,
                         y: centre.y - cellHeight / 2,
