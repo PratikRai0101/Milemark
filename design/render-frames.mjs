@@ -14,8 +14,10 @@ const require = createRequire('/Users/pratikrai/.pi/agent/skills/app-designer/pa
 const { chromium } = require('playwright-core');
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-const shots = path.join(root, 'Screenshots');
-const out = path.join(shots, 'frames');
+// The raw captures are an intermediate step and are not published. Only the
+// framed renders are.
+const shots = path.join(root, '.captures');
+const out = path.join(root, 'Screenshots', 'frames');
 fs.mkdirSync(out, { recursive: true });
 
 const frames = [

@@ -12,7 +12,7 @@ cd "$(dirname "$0")/.."
 
 DEVICE="${1:-iPhone 17 Pro}"
 BUNDLE="app.milemark.app"
-OUT="Screenshots"
+OUT=".captures"
 DERIVED=".build/screenshots"
 
 if [ ! -d "$DERIVED" ]; then

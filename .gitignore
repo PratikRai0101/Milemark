@@ -34,5 +34,6 @@ secrets.json
 
 # Local tooling
 *.log
+.captures/
 node_modules/
 .DS_Store

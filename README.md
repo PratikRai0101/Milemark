@@ -189,6 +189,11 @@ The action bar is on **Liquid Glass** where the system provides it (iOS 26 and
 later), and on a matched flat bar where it does not, so the app still supports
 iOS 18 without the bar feeling broken.
 
+![The receipt's action bar on Liquid Glass](Screenshots/glass-action-bar.png)
+
+*The action bar on iOS 26. The paper's torn edge shows through the glass, which
+is the system material rather than a flat panel behind it.*
+
 ## The receipt
 
 The paper comes out of a metal tray rail and stays in one place while the
