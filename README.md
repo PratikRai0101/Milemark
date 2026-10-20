@@ -8,7 +8,17 @@ Runs are kept in an archive of route silhouettes rather than a dashboard of
 numbers, and finished receipts can be collected into a collection or shared
 with the ends of the route trimmed.
 
-<!-- The screenshots below are replaced by the release workflow. -->
+## Screens
+
+| | | |
+|---|---|---|
+| ![The route archive](Screenshots/01-archive.png) | ![The printed receipt](Screenshots/02-receipt-route.png) | ![The route as a field of characters](Screenshots/03-receipt-ascii.png) |
+| **Runs** — every route as its own shape | **The receipt** — printed from a slot | **ASCII** — the same route, printed |
+| ![Pace per kilometre](Screenshots/04-receipt-pace.png) | ![Sharing the receipt](Screenshots/05-share.png) | ![Recording a run](Screenshots/07-tracking.png) |
+| **Pace** — inspectable per kilometre | **Share** — with the route ends trimmed | **Recording** — a quiet map, a vivid track |
+
+These are the real app running in the simulator, captured by
+[`design/capture-screenshots.sh`](design/capture-screenshots.sh).
 
 ## Status
 
