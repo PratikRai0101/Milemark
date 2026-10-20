@@ -34,26 +34,31 @@ struct RouteTraceView: View {
             drawGrid(context: context, size: size)
 
             guard run.points.count > 1 else { return }
-            let normalised = RouteGeometry.normalisedPoints(run.points)
-            guard let frame = RouteProjection.frame(for: normalised, in: size) else { return }
-
-            var path = Path()
-            for (index, point) in normalised.enumerated() {
-                let location = RouteProjection.location(for: point, in: frame)
-                if index == 0 {
-                    path.move(to: location)
-                } else {
-                    path.addLine(to: location)
+            // The route is drawn in pieces, so a pause is a gap in the line
+            // rather than a straight line across it. All the pieces share one
+            // frame, so they keep their relative size.
+            let segments = RouteGeometry.normalisedSegments(run.points, breaks: run.segmentBreaks)
+            let all = segments.flatMap { $0 }
+            guard let frame = RouteProjection.frame(for: all, in: size, inset: 0.92) else { return }
+            for segment in segments {
+                var path = Path()
+                for (index, point) in segment.enumerated() {
+                    let location = RouteProjection.location(for: point, in: frame)
+                    if index == 0 {
+                        path.move(to: location)
+                    } else {
+                        path.addLine(to: location)
+                    }
                 }
+                context.stroke(
+                    path,
+                    with: .color(Theme.paperInk),
+                    style: StrokeStyle(lineWidth: 2.8, lineCap: .round, lineJoin: .round)
+                )
             }
-            context.stroke(
-                path,
-                with: .color(Theme.paperInk),
-                style: StrokeStyle(lineWidth: 2.8, lineCap: .round, lineJoin: .round)
-            )
 
             // The start of the run is marked, not the end of the file.
-            if let first = normalised.first {
+            if let first = all.first {
                 let start = RouteProjection.location(for: first, in: frame)
                 context.fill(
                     Path(ellipseIn: CGRect(x: start.x - 3.6, y: start.y - 3.6, width: 7.2, height: 7.2)),
@@ -116,14 +121,10 @@ struct ASCIITraceView: View {
             // The route as one or more lines on the page. A pause is a gap, so
             // the segments are drawn separately.
             let segments = RouteGeometry.normalisedSegments(run.points, breaks: run.segmentBreaks)
-            var lines: [[CGPoint]] = []
-            var fieldRect = CGRect.null
-            for segment in segments {
-                guard let frame = RouteProjection.frame(for: segment, in: size, inset: 0.9) else { continue }
-                lines.append(segment.map { RouteProjection.location(for: $0, in: frame) })
-                fieldRect = fieldRect.isNull ? frame : fieldRect.union(frame)
-            }
-            guard !lines.isEmpty else { return }
+            let all = segments.flatMap { $0 }
+            guard let frame = RouteProjection.frame(for: all, in: size, inset: 0.9) else { return }
+            let lines = segments.map { $0.map { RouteProjection.location(for: $0, in: frame) } }
+            let fieldRect = frame
 
             let cellWidth = size.width / CGFloat(columns)
             let cellHeight = size.height / CGFloat(rows)

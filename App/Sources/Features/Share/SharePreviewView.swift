@@ -130,7 +130,7 @@ struct SharePreviewView: View {
                 .foregroundStyle(Theme.paperSecondary)
                 .padding(.top, 6)
 
-            ShareRoutePreview(points: displayedPoints)
+            ShareRoutePreview(points: displayedPoints, breaks: displayedBreaks)
                 .frame(height: 160)
                 .padding(.vertical, 8)
 
@@ -247,8 +247,10 @@ struct ShareRoutePreview: View {
             context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Theme.graphic))
             guard points.count > 1 else { return }
             // A pause is a gap, so the route is drawn in segments.
-            for segment in RouteGeometry.normalisedSegments(points, breaks: breaks) {
-                guard let frame = RouteProjection.frame(for: segment, in: size, inset: 0.88) else { continue }
+            let segments = RouteGeometry.normalisedSegments(points, breaks: breaks)
+            let all = segments.flatMap { $0 }
+            guard let frame = RouteProjection.frame(for: all, in: size, inset: 0.88) else { return }
+            for segment in segments {
                 var path = Path()
                 for (index, point) in segment.enumerated() {
                     let location = RouteProjection.location(for: point, in: frame)

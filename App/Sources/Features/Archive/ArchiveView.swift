@@ -187,7 +187,7 @@ private struct RunTile: View {
             .font(Theme.Font.label)
             .foregroundStyle(Theme.secondary)
 
-            RouteSilhouette(points: run.points)
+            RouteSilhouette(points: run.points, breaks: run.segmentBreaks)
                 .frame(maxWidth: .infinity)
                 .frame(height: 82)
                 .padding(.vertical, 7)
@@ -227,8 +227,10 @@ struct RouteSilhouette: View {
         Canvas { context, size in
             guard points.count > 1 else { return }
             // A pause is a gap, so the route is drawn in segments.
-            for segment in RouteGeometry.normalisedSegments(points, breaks: breaks) {
-                guard let frame = RouteProjection.frame(for: segment, in: size) else { continue }
+            let segments = RouteGeometry.normalisedSegments(points, breaks: breaks)
+            let all = segments.flatMap { $0 }
+            guard let frame = RouteProjection.frame(for: all, in: size) else { return }
+            for segment in segments {
                 var path = Path()
                 for (index, point) in segment.enumerated() {
                     let location = RouteProjection.location(for: point, in: frame)
