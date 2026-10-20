@@ -28,7 +28,6 @@ struct ReceiptGraphicView: View {
 /// The recorded track, drawn as a line on a faint survey grid.
 struct RouteTraceView: View {
     let run: Run
-    @State private var drawProgress: CGFloat = 0
 
     var body: some View {
         Canvas { context, size in
@@ -262,7 +261,30 @@ struct PaceTrendView: View {
                     .onEnded { _ in selection = nil }
             )
         }
+        // The chart is described as a list of splits, and can be stepped
+        // through, so the values are not only reachable by dragging.
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("Pace per kilometre")
+        .accessibilityValue(accessibilitySummary)
+        .accessibilityAdjustableAction { direction in
+            let values = splits.map(\.paceSecondsPerKm)
+            guard !values.isEmpty else { return }
+            let step = direction == .increment ? 1 : -1
+            selection = min(max((selection ?? 0) + step, 0), values.count - 1)
+        }
+    }
+
+    /// The splits, read out.
+    private var accessibilitySummary: String {
+        let values = splits.map(\.paceSecondsPerKm)
+        guard !values.isEmpty else { return "No complete kilometre yet" }
+        if let selection, selection < values.count {
+            let fastest = values.enumerated().min { $0.element < $1.element }?.offset ?? 0
+            let isFastest = selection == fastest
+            return "Kilometre \(selection + 1), \(Format.pace(values[selection])) per kilometre\(isFastest ? ", the fastest" : "")"
+        }
+        let fastest = values.enumerated().min { $0.element < $1.element }?.offset ?? 0
+        return "\(values.count) kilometres. Fastest was kilometre \(fastest + 1) at \(Format.pace(values[fastest]))."
     }
 
     private func crosshair(
