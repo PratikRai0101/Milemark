@@ -73,9 +73,11 @@ surfaces are still provisional.
 | Printed receipt with four graphic treatments | Working |
 | Review and share preview | Working |
 | Sharing | Exports a receipt image to the system share sheet |
-| Photo print treatment | Working, with a halftone treatment |
+| Photo print treatment | Working, in three ways: halftone, dither and poster |
 | Collection of kept receipts | Working |
-| Comparison with the last run on the same route | Working |
+| Comparison with the last run on the same route | Working, by pace |
+| Haptics | Working |
+| Liquid Glass action bar | On iOS 26 and later; a matched flat bar elsewhere |
 | Strava import | Not implemented — the archive header is demo data |
 | Health / heart rate | Not implemented — the receipt shows `—` |
 
