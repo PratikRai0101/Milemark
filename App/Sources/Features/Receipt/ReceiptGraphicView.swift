@@ -86,14 +86,19 @@ struct RouteTraceView: View {
 
 /// The same track, printed as a field of characters.
 ///
-/// The whole area is printed in a pale character field, and the characters
-/// the route passes through are printed in full ink. The shape of the run is
+/// The whole area is printed in a pale character field, and the characters the
+/// route passes through are printed in full ink. The shape of the run is
 /// therefore readable at a glance, the way a printed map is.
+///
+/// A cell belongs to the route when the **line** passes through it, not when
+/// one of the GPS samples happens to land in it. Testing against the samples
+/// leaves gaps between them and the trail comes out as a dotted line instead
+/// of a trace.
 struct ASCIITraceView: View {
     let run: Run
 
-    private let columns = 33
-    private let rows = 22
+    private let columns = 40
+    private let rows = 26
 
     var body: some View {
         Canvas { context, size in
@@ -103,14 +108,22 @@ struct ASCIITraceView: View {
             )
             guard run.points.count > 1 else { return }
             let normalised = RouteGeometry.normalisedPoints(run.points)
-            guard let frame = RouteProjection.frame(for: normalised, in: size, inset: 0.86) else { return }
+            guard let frame = RouteProjection.frame(for: normalised, in: size, inset: 0.9) else { return }
+
+            // The route as a line on the page.
+            var line: [CGPoint] = []
+            for point in normalised {
+                line.append(RouteProjection.location(for: point, in: frame))
+            }
 
             let cellWidth = size.width / CGFloat(columns)
             let cellHeight = size.height / CGFloat(rows)
             let letters = Array("RUN")
             // The printed field reaches a little beyond the route, so the map
             // has an edge rather than bleeding into the paper.
-            let field = frame.insetBy(dx: -cellWidth * 1.6, dy: -cellHeight * 1.6)
+            let field = frame.insetBy(dx: -cellWidth * 1.5, dy: -cellHeight * 1.5)
+            // The route is printed as a stroke a little over one cell wide.
+            let band = max(cellWidth, cellHeight) * 0.88
 
             for row in 0..<rows {
                 for column in 0..<columns {
@@ -118,25 +131,42 @@ struct ASCIITraceView: View {
                         x: (CGFloat(column) + 0.5) * cellWidth,
                         y: (CGFloat(row) + 0.5) * cellHeight
                     )
-                    // The whole area the route occupies is printed in a pale
-                    // field, and the route is printed over it in full ink, so
-                    // the shape reads the way a printed map does.
-                    let inField = field.contains(centre)
-                    guard inField else { continue }
+                    guard field.contains(centre) else { continue }
 
-                    let onRoute = normalised.contains { point in
-                        let location = RouteProjection.location(for: point, in: frame)
-                        return hypot(location.x - centre.x, location.y - centre.y) < cellWidth * 0.95
-                    }
+                    let onRoute = ASCIITraceView.distance(from: centre, to: line) <= band
                     let letter = letters[(column * 7 + row * 3) % letters.count]
                     let text = Text(String(letter))
-                        .font(.system(size: min(cellWidth, cellHeight) * 0.92, weight: onRoute ? .semibold : .regular, design: .monospaced))
-                        .foregroundStyle(onRoute ? Theme.paperInk : Theme.paperSecondary.opacity(0.28))
+                        .font(.system(size: min(cellWidth, cellHeight) * 0.95, weight: onRoute ? .bold : .regular, design: .monospaced))
+                        .foregroundStyle(onRoute ? Theme.paperInk : Theme.paperSecondary.opacity(0.16))
                     context.draw(text, at: centre)
                 }
             }
         }
         .accessibilityLabel("Route drawn with letters")
+    }
+
+    /// The shortest distance from a point to the line drawn by the route.
+    private static func distance(from point: CGPoint, to line: [CGPoint]) -> CGFloat {
+        var nearest = CGFloat.greatestFiniteMagnitude
+        guard line.count > 1 else { return nearest }
+        for index in 1..<line.count {
+            nearest = min(nearest, distance(from: point, toSegmentFrom: line[index - 1], to: line[index]))
+        }
+        return nearest
+    }
+
+    /// The distance from a point to a line segment.
+    private static func distance(from point: CGPoint, toSegmentFrom start: CGPoint, to end: CGPoint) -> CGFloat {
+        let dx = end.x - start.x
+        let dy = end.y - start.y
+        let lengthSquared = dx * dx + dy * dy
+        guard lengthSquared > 0 else {
+            return hypot(point.x - start.x, point.y - start.y)
+        }
+        let projection = ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared
+        let t = CGFloat(max(0, min(1, projection)))
+        let closest = CGPoint(x: start.x + t * dx, y: start.y + t * dy)
+        return hypot(point.x - closest.x, point.y - closest.y)
     }
 }
 
