@@ -44,11 +44,14 @@ struct PhotoPrintView: View {
     private let gridHeight = 56
 
     var body: some View {
+        // The print progress is read here, not only inside the drawing, so
+        // SwiftUI knows the picture has to be redrawn as it prints.
+        let progress = printed
         ZStack {
             Theme.graphic
             if let image, !tones.isEmpty {
                 Canvas { context, size in
-                    draw(context: context, size: size)
+                    draw(context: context, size: size, progress: progress)
                 }
             } else {
                 Image(systemName: "camera.aperture")
@@ -85,13 +88,13 @@ struct PhotoPrintView: View {
 
     // MARK: - Drawing
 
-    private func draw(context: GraphicsContext, size: CGSize) {
+    private func draw(context: GraphicsContext, size: CGSize, progress: Double) {
         guard columns > 0, rows > 0 else { return }
         let cellWidth = size.width / CGFloat(columns)
         let cellHeight = size.height / CGFloat(rows)
         // The row that is being printed right now, drawn slightly darker so
         // the ink looks like it is being laid down.
-        let currentRow = Int(printed * CGFloat(rows))
+        let currentRow = Int(progress * CGFloat(rows))
 
         for row in 0..<rows {
             let rowProgress = (CGFloat(row) + 1) / CGFloat(rows)
@@ -212,7 +215,7 @@ struct PhotoPrintView: View {
             context.draw(cgImage, in: drawn)
             return true
         }
-        guard drawn else { return }
+        guard drawn else { NSLog("PHOTO draw failed"); return }
         columns = gridWidth
         rows = gridHeight
         tones = pixels.map { Double($0) / 255 }

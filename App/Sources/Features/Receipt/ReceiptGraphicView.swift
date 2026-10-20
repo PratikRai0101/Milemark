@@ -104,6 +104,9 @@ struct ASCIITraceView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        // The print progress is read here, not only inside the drawing, so
+        // SwiftUI knows the map has to be redrawn as it prints.
+        let progress = printed
         Canvas { context, size in
             context.fill(
                 Path(CGRect(origin: .zero, size: size)),
@@ -135,7 +138,7 @@ struct ASCIITraceView: View {
                 // The map is printed from the top down, the way a plotter
                 // would lay it down.
                 let rowProgress = (CGFloat(row) + 1) / CGFloat(rows)
-                let rowIsPrinted = rowProgress <= printed
+                let rowIsPrinted = rowProgress <= progress
 
                 for column in 0..<columns {
                     let centre = CGPoint(
