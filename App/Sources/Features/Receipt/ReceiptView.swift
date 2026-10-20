@@ -19,6 +19,7 @@ struct ReceiptView: View {
     @State private var isFeeding = true
     @State private var isCollected: Bool
     @State private var isTearing = false
+    @State private var tearOpacity: Double = 1
     @State private var tearProgress: CGFloat = 0
     @State private var showShare = false
     @State private var showGraphicPicker = false
@@ -66,7 +67,7 @@ struct ReceiptView: View {
                 )
                 .rotationEffect(.degrees(tearProgress * 3))
                 .offset(y: tearProgress * 150)
-                .opacity(isTearing ? 0 : 1)
+                .opacity(tearOpacity)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 120)
@@ -165,8 +166,11 @@ struct ReceiptView: View {
         isTearing = true
         store.setCollected(true, for: run.id)
         Haptics.shared.impact(.medium)
+        // The paper falls away and fades as it goes, so the departure is seen
+        // rather than skipped.
         withAnimation(.easeIn(duration: Motion.tear(reduceMotion))) {
             tearProgress = 3
+            tearOpacity = 0
         }
         Task {
             try? await Task.sleep(for: .milliseconds(Int(Motion.tear(reduceMotion) * 1000) + 40))
@@ -333,29 +337,31 @@ struct ReceiptPaper: View {
             // The caption sits on a strip below the picture, the way a label
             // sits under a plate, rather than over the top of it.
             HStack(spacing: 8) {
-                // When the photograph is showing, the treatment chips are the
-                // caption, so the picture is not named twice.
-                if graphic != .photo {
-                    Button {
-                        showGraphicPicker = true
-                    } label: {
-                        HStack(spacing: 5) {
+                // The chooser is always here. It is the only way back to the
+                // other treatments once a photograph has been chosen.
+                Button {
+                    showGraphicPicker = true
+                } label: {
+                    HStack(spacing: 5) {
+                        // The photograph names itself with its treatment
+                        // chips, so the title is left out to make room.
+                        if graphic != .photo {
                             Text(graphic.title)
                                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
                                 .lineLimit(1)
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .font(.system(size: 9, weight: .semibold))
                         }
-                        .foregroundStyle(Theme.paperInk)
-                        .fixedSize()
-                        .padding(.horizontal, 9)
-                        .frame(height: 24)
-                        .background(Theme.paper, in: Capsule())
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 9, weight: .semibold))
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Change receipt graphic, currently \(graphic.title)")
-                    .accessibilityIdentifier("graphic-badge")
+                    .foregroundStyle(Theme.paperInk)
+                    .fixedSize()
+                    .padding(.horizontal, 9)
+                    .frame(height: 24)
+                    .background(Theme.paper, in: Capsule())
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Change receipt graphic, currently \(graphic.title)")
+                .accessibilityIdentifier("graphic-badge")
 
                 if graphic == .photo {
                     PhotosPicker(selection: $photoItem, matching: .images) {
@@ -454,9 +460,10 @@ struct ReceiptPaper: View {
     @ViewBuilder
     private var comparison: some View {
         if let previous = comparisonRun {
-            let difference = run.movingTime - previous.movingTime
-            let faster = difference < 0
-            let magnitude = abs(difference)
+            let timeDifference = run.movingTime - previous.movingTime
+            // The pace is the fair comparison: two runs of the same loop can
+            // cover different distances, so the total time says little on its
+            // own.
             let paceDifference = RouteGeometry.paceSecondsPerKm(
                 distanceMeters: run.distanceMeters,
                 movingTime: run.movingTime
@@ -466,17 +473,29 @@ struct ReceiptPaper: View {
                     movingTime: previous.movingTime
                 ).map { current - $0 } ?? 0
             } ?? 0
+            let faster = paceDifference < 0
+            let samePace = abs(paceDifference) < 1
+            // The total time is only worth quoting when both runs covered a
+            // comparable distance.
+            let comparableDistance = previous.distanceMeters > 0
+                && abs(run.distanceMeters - previous.distanceMeters) / previous.distanceMeters < 0.05
 
             VStack(spacing: 3) {
-                Text(faster ? "FASTER ON THE SAME ROUTE" : "SLOWER ON THE SAME ROUTE")
+                Text(samePace ? "SAME PACE ON THE SAME ROUTE" : (faster ? "FASTER ON THE SAME ROUTE" : "SLOWER ON THE SAME ROUTE"))
                     .font(.system(size: 10, weight: .semibold, design: .monospaced))
                     .tracking(0.4)
                     .foregroundStyle(Theme.paperSecondary)
-                Text("\(Format.duration(magnitude)) \(faster ? "quicker" : "slower") than \(previous.startedAt.formatted(.dateTime.day().month(.abbreviated)))")
-                    .font(.system(size: 13, weight: .bold, design: .monospaced))
-                    .foregroundStyle(Theme.paperInk)
-                if abs(paceDifference) >= 1 {
-                    Text("Pace \(Format.paceDifference(paceDifference)) per km \(faster ? "faster" : "slower")")
+                if samePace {
+                    Text("\(Format.duration(abs(timeDifference))) \(timeDifference < 0 ? "quicker" : "slower") than \(previous.startedAt.formatted(.dateTime.day().month(.abbreviated)))")
+                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .foregroundStyle(Theme.paperInk)
+                } else {
+                    Text("\(Format.paceDifference(abs(paceDifference))) per km \(faster ? "faster" : "slower")")
+                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .foregroundStyle(Theme.paperInk)
+                }
+                if !samePace, comparableDistance {
+                    Text("\(Format.duration(abs(timeDifference))) \(timeDifference < 0 ? "quicker" : "slower") in total")
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(Theme.paperSecondary)
                 }
