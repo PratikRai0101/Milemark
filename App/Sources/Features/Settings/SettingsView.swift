@@ -10,6 +10,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var showsDeleteConfirmation = false
+    @State private var importSource: ImportViewModel.Source?
 
     var body: some View {
         List {
@@ -41,6 +42,26 @@ struct SettingsView: View {
             }
 
             Section {
+                Button {
+                    importSource = .strava
+                } label: {
+                    Label("Import from Strava", systemImage: "figure.run.circle")
+                }
+                .accessibilityIdentifier("import-strava")
+
+                Button {
+                    importSource = .health
+                } label: {
+                    Label("Import from Health", systemImage: "heart.text.square")
+                }
+                .accessibilityIdentifier("import-health")
+            } header: {
+                Text("Import")
+            } footer: {
+                Text("Bring in runs recorded by another app. Imported runs keep their own numbers and are marked as imported in the archive.")
+            }
+
+            Section {
                 Button(role: .destructive) {
                     showsDeleteConfirmation = true
                 } label: {
@@ -59,6 +80,9 @@ struct SettingsView: View {
                 }
             }
             Button("Cancel", role: .cancel) {}
+        }
+        .navigationDestination(item: $importSource) { source in
+            ImportSourceView(source: source)
         }
     }
 }

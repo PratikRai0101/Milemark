@@ -218,6 +218,16 @@ private struct RunTile: View {
                     .foregroundStyle(Theme.secondary)
             }
             .foregroundStyle(Theme.ink)
+
+            // A run that came from another app says where it came from.
+            // The reader is looking at a number they did not record here, and
+            // it should be clear which numbers those are.
+            if let sourceName = run.sourceName {
+                Text(sourceName.uppercased())
+                    .font(Theme.Font.label)
+                    .foregroundStyle(Theme.secondary)
+                    .padding(.top, 2)
+            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 12)

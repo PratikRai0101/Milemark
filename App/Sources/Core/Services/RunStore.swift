@@ -14,7 +14,9 @@ public final class RunStore {
     /// Whether the runs file could not be read or set aside.
     public private(set) var isUnreadable = false
 
-    private let fileURL: URL
+    /// Where the runs are kept. Exposed so that a test can use a file of its
+    /// own rather than the one the app is using.
+    let fileURL: URL
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
 
@@ -121,6 +123,42 @@ public final class RunStore {
         guard let index = runs.firstIndex(where: { $0.id == run.id }) else { return }
         runs[index] = run
         save()
+    }
+
+    /// Whether a run from another service is already in the archive.
+    ///
+    /// The source's own identifier decides this, not the date or the title:
+    /// somebody can run the same loop twice, and the second run is not the
+    /// first one.
+    public func hasImported(source: Run.Source, sourceID: String) -> Bool {
+        runs.contains { $0.source == source && $0.sourceID == sourceID }
+    }
+
+    /// Adds runs that came from another service.
+    ///
+    /// A run that is already here is left alone, so importing the same
+    /// activity twice does not produce two copies of it.
+    ///
+    /// It reports how many were added, and whether they reached the disk.
+    @discardableResult
+    public func importRuns(_ newRuns: [Run]) -> (added: Int, saved: Bool) {
+        let previous = runs
+        var added = 0
+        for run in newRuns {
+            if let sourceID = run.sourceID, hasImported(source: run.source, sourceID: sourceID) {
+                continue
+            }
+            runs.append(run)
+            added += 1
+        }
+        guard added > 0 else { return (0, true) }
+        runs.sort { $0.startedAt > $1.startedAt }
+        guard save() else {
+            // A run that did not reach the disk is not a saved run.
+            runs = previous
+            return (added, false)
+        }
+        return (added, true)
     }
 
     public func setCollected(_ collected: Bool, for runID: UUID) {
