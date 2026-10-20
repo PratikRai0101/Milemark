@@ -31,13 +31,27 @@ with the ends of the route trimmed.
 <br><sub><b>Pace</b> — inspectable per kilometre</sub>
 </td>
 <td width="33%" valign="top">
+<img src="Screenshots/08-photo.png" width="280" alt="A photograph printed as a hard two-tone poster of dots">
+<br><sub><b>Photo</b> — printed three ways</sub>
+</td>
+<td width="33%" valign="top">
 <img src="Screenshots/05-share.png" width="280" alt="The share preview, with the route ends trimmed and the note included">
 <br><sub><b>Share</b> — with the route ends trimmed</sub>
 </td>
+</tr>
+</table>
+
+<table>
+<tr>
 <td width="33%" valign="top">
 <img src="Screenshots/07-tracking.png" width="280" alt="Recording a run: a quiet map with a bright orange track">
 <br><sub><b>Recording</b> — a quiet map, a vivid track</sub>
 </td>
+<td width="33%" valign="top">
+<img src="Screenshots/06-kept.png" width="280" alt="The collection of kept receipts">
+<br><sub><b>Kept</b> — the receipts you kept</sub>
+</td>
+<td width="33%" valign="top"></td>
 </tr>
 </table>
 
