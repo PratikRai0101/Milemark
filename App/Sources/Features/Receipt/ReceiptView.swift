@@ -11,6 +11,7 @@ import SwiftUI
 struct ReceiptView: View {
     @Environment(RunStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let run: Run
 
@@ -164,11 +165,11 @@ struct ReceiptView: View {
         isTearing = true
         store.setCollected(true, for: run.id)
         Haptics.shared.impact(.medium)
-        withAnimation(.easeIn(duration: 0.42)) {
+        withAnimation(.easeIn(duration: Motion.tear(reduceMotion))) {
             tearProgress = 3
         }
         Task {
-            try? await Task.sleep(for: .milliseconds(460))
+            try? await Task.sleep(for: .milliseconds(Int(Motion.tear(reduceMotion) * 1000) + 40))
             Haptics.shared.success()
             dismiss()
         }
@@ -227,6 +228,7 @@ struct ReceiptPaper: View {
 
     @State private var feedProgress: CGFloat = 0
     @State private var isPulling = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var tearArmed = false
 
     var body: some View {
@@ -270,14 +272,17 @@ struct ReceiptPaper: View {
                     }
             }
         }
-        .animation(.linear(duration: 1.1), value: feedProgress)
+        .animation(.linear(duration: Motion.feed(reduceMotion)), value: feedProgress)
         .task {
             // The paper feeds out when the receipt first appears. Setting the
             // value again if the view is rebuilt means the paper can never be
             // left hidden behind the slot.
+            // The paper is simply there when motion is reduced: nothing
+            // travels, and no tick is felt.
             feedProgress = 1
-            // The print is felt as it happens, not announced at the end.
-            Haptics.shared.printTicks(over: 1.1)
+            if !reduceMotion {
+                Haptics.shared.printTicks(over: 1.1)
+            }
         }
     }
 

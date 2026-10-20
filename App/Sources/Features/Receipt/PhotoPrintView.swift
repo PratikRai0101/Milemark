@@ -36,6 +36,7 @@ struct PhotoPrintView: View {
     @State private var columns = 0
     @State private var rows = 0
     @State private var printed = 0.0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// The size of the dot grid. Fine enough to read as a picture, coarse
     /// enough to print.
@@ -63,6 +64,11 @@ struct PhotoPrintView: View {
             sample(loaded)
         }
         .task(id: treatment) {
+            // Reduced motion: the picture is printed, it does not travel.
+            if reduceMotion {
+                printed = 1
+                return
+            }
             printed = 0
             withAnimation(.linear(duration: 0.45)) { printed = 1 }
         }

@@ -102,6 +102,7 @@ struct ASCIITraceView: View {
     private let rows = 26
     /// How much of the map has been printed, from 0 to 1.
     @State private var printed = 0.0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Canvas { context, size in
@@ -155,6 +156,11 @@ struct ASCIITraceView: View {
             }
         }
         .task(id: run.id) {
+            // Reduced motion: the map is printed, it does not travel.
+            if reduceMotion {
+                printed = 1
+                return
+            }
             printed = 0
             withAnimation(.linear(duration: 0.55)) { printed = 1 }
         }
