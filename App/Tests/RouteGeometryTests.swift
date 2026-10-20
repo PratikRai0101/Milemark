@@ -193,6 +193,16 @@ final class RouteGeometryTests: XCTestCase {
         XCTAssertLessThan(RouteGeometry.similarity(first, second), 0.7)
     }
 
+    func testAStationaryRouteHasNoNaN() {
+        // Two identical points: the route has no shape at all.
+        let points = [point(1.3000, 103.8000), point(1.3000, 103.8000)]
+        let normalised = RouteGeometry.normalisedPoints(points)
+        for value in normalised {
+            XCTAssertTrue(value.x.isFinite)
+            XCTAssertTrue(value.y.isFinite)
+        }
+    }
+
     func testResamplingGivesTheSameNumberOfPoints() {
         let sparse = (0..<5).map { index in point(1.30 + Double(index) * 0.001, 103.80) }
         let dense = (0..<200).map { index in point(1.30 + Double(index) * 0.000025, 103.80) }

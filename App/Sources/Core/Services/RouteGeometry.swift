@@ -186,12 +186,19 @@ public enum RouteGeometry {
             let y = (point.latitude - bounds.minLatitude) * metresPerDegreeLatitude
             result.append(CGPoint(x: x, y: y))
         }
-        let maxX = result.map(\.x).max() ?? 1
-        let maxY = result.map(\.y).max() ?? 1
+        let maxX = result.map(\.x).max() ?? 0
+        let maxY = result.map(\.y).max() ?? 0
+
+        // A route that does not move has no shape. Centring it on the spot
+        // it was recorded is better than dividing by zero.
+        let extent = Swift.max(maxX, maxY)
+        guard extent > 0 else {
+            return result.map { _ in .zero }
+        }
 
         // Fit into the unit square on the longer axis, so the shape is only
         // ever scaled down and never distorted.
-        let scale = 1 / Swift.max(maxX, maxY)
+        let scale = 1 / extent
         result = result.map { CGPoint(x: $0.x * scale, y: $0.y * scale) }
         return result
     }
