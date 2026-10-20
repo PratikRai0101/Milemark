@@ -91,19 +91,43 @@ public enum RouteGeometry {
 
     /// Splits for each completed kilometre of a route.
     ///
-    /// A split's duration is the time taken to travel the kilometre that ended
-    /// at that boundary, so the pace of each split is that same duration.
+    /// The time at each kilometre boundary is **interpolated** between the
+    /// samples either side of it, rather than taken from the first sample
+    /// past the boundary. A route sampled every ten metres would otherwise
+    /// report every split as up to ten metres slow.
+    ///
+    /// Time spent paused is not counted: the active time only advances within
+    /// a segment, so a pause in the middle of a kilometre does not make the
+    /// split look slower than the run was.
     public static func splits(_ points: [RoutePoint], breaks: [Int] = []) -> [Split] {
         guard points.count > 1 else { return [] }
         let cumulative = cumulativeDistances(points, breaks: breaks)
+        let active = activeTimes(points, breaks: breaks)
+        let breakSet = Set(breaks)
+
         var splits: [Split] = []
         var kilometre = 1
-        var previousTime = points[0].timestamp
+        // The active time at the start of the kilometre being measured.
+        var kilometreStart = active[0]
 
-        for index in 1..<points.count {
+        var index = 1
+        while index < points.count {
             let target = Double(kilometre) * 1000
-            guard cumulative[index] >= target else { continue }
-            let duration = points[index].timestamp.timeIntervalSince(previousTime)
+            let before = cumulative[index - 1]
+            let after = cumulative[index]
+            guard after >= target else {
+                index += 1
+                continue
+            }
+
+            // Where between the two samples the boundary was crossed.
+            let span = after - before
+            let fraction = span > 0 ? (target - before) / span : 0
+            let activeBefore = active[index - 1]
+            let activeAfter = active[index]
+            let crossing = activeBefore + (activeAfter - activeBefore) * fraction
+
+            let duration = max(0, crossing - kilometreStart)
             splits.append(
                 Split(
                     kilometre: kilometre,
@@ -111,10 +135,35 @@ public enum RouteGeometry {
                     paceSecondsPerKm: duration
                 )
             )
-            previousTime = points[index].timestamp
             kilometre += 1
+            kilometreStart = crossing
+            // The same pair of samples can cross more than one boundary, so
+            // the index is not advanced here.
+            if index < points.count, breakSet.contains(index) {
+                // A segment boundary is never crossed: the next segment
+                // starts its own count from here.
+                index += 1
+            }
         }
         return splits
+    }
+
+    /// The time the route has actually covered, at each sample.
+    ///
+    /// The clock does not advance across a break, so time spent paused is
+    /// left out.
+    private static func activeTimes(_ points: [RoutePoint], breaks: [Int]) -> [TimeInterval] {
+        guard !points.isEmpty else { return [] }
+        let breakSet = Set(breaks)
+        var times: [TimeInterval] = [0]
+        times.reserveCapacity(points.count)
+        for index in 1..<points.count {
+            let delta = breakSet.contains(index)
+                ? 0
+                : points[index].timestamp.timeIntervalSince(points[index - 1].timestamp)
+            times.append(times[index - 1] + delta)
+        }
+        return times
     }
 
     /// Projects a route into a unit square, preserving aspect ratio so a printed
