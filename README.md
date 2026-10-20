@@ -26,6 +26,7 @@ surfaces are still provisional.
 | Sharing | Exports a receipt image to the system share sheet |
 | Photo print treatment | Working, with a halftone treatment |
 | Collection of kept receipts | Working |
+| Comparison with the last run on the same route | Working |
 | Strava import | Not implemented — the archive header is demo data |
 | Health / heart rate | Not implemented — the receipt shows `—` |
 
@@ -69,8 +70,9 @@ splits, pace formatting, route normalisation and endpoint trimming.
 standing still, implausible jumps, pausing and the auto-pause threshold.
 
 `MilemarkUITests` drives the app end to end — opening a receipt, changing
-the graphic, pulling the paper short of the tear and past it, and opening the
-share preview. A screenshot cannot show whether a gesture behaves.
+the graphic, pulling the paper short of the tear and past it, tearing off,
+and opening the share preview. A screenshot cannot show whether a gesture
+behaves.
 
 ## Sample activities
 
@@ -100,6 +102,24 @@ xcrun simctl location booted set 1.3050,103.8700
 
 GitHub Actions builds the app and runs the tests on every push and pull
 request.
+
+## The receipt
+
+The paper feeds out of a fixed slot and stays in one place while the graphic
+changes inside it. Four treatments are available: the route trace, an ASCII map
+printed as a field of characters, a pace chart per kilometre, and a photograph
+treated like a halftone print.
+
+The tear is the interaction people describe. The grip at the end of the paper
+says what to do: it only offers the pull once the receipt has been scrolled to
+the end, because a pull in the middle of a long receipt is a scroll. The paper
+then follows the finger, and released short of the threshold it springs back
+into the slot. The **Tear off** button in the action bar does the same thing
+without the gesture.
+
+A receipt also compares itself with the last time the same route was run. The
+comparison is made on the shape of the route rather than on its samples, so two
+laps of the same loop match even when one of them has a lap more.
 
 ## Design
 
