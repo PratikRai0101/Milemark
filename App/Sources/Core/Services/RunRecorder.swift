@@ -123,6 +123,12 @@ public final class RunRecorder: NSObject {
         guard phase == .idle else { return }
         phase = .ready
         refreshStatus()
+        // The app asks for location when the recording screen is opened. Without
+        // this the first run records nothing, because a manager that was never
+        // authorised never delivers a fix.
+        if manager.authorizationStatus == .notDetermined {
+            manager.requestWhenInUseAuthorization()
+        }
         manager.startUpdatingLocation()
     }
 
@@ -378,6 +384,11 @@ extension RunRecorder: CLLocationManagerDelegate {
     public nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor [weak self] in
             self?.refreshStatus()
+            // The manager only starts delivering fixes once it is allowed to.
+            if self?.manager.authorizationStatus == .authorizedWhenInUse
+                || self?.manager.authorizationStatus == .authorizedAlways {
+                self?.manager.startUpdatingLocation()
+            }
         }
     }
 

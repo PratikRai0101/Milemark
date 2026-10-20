@@ -13,31 +13,42 @@ with the ends of the route trimmed.
 <table>
 <tr>
 <td width="33%" valign="top">
-<img src="Screenshots/01-archive.png" width="280" alt="The route archive: every run as its own shape, with its date and distance">
+<img src="Screenshots/frames/01-01-archive.png" width="280" alt="The route archive: every run as its own shape, with its date and distance">
 <br><sub><b>Runs</b> — every route as its own shape</sub>
 </td>
 <td width="33%" valign="top">
-<img src="Screenshots/02-receipt-route.png" width="280" alt="The printed receipt: a route drawn on paper, with distance, pace, time and elevation">
+<img src="Screenshots/frames/02-02-receipt-route.png" width="280" alt="The printed receipt: a route drawn on paper, with distance, pace, time and elevation">
 <br><sub><b>The receipt</b> — printed from a tray</sub>
 </td>
 <td width="33%" valign="top">
-<img src="Screenshots/03-receipt-ascii.png" width="280" alt="The same route printed as a field of the letters R, U and N">
+<img src="Screenshots/frames/03-03-receipt-ascii.png" width="280" alt="The same route printed as a field of the letters R, U and N">
 <br><sub><b>ASCII</b> — the same route, printed</sub>
 </td>
 </tr>
 <tr>
 <td width="33%" valign="top">
-<img src="Screenshots/04-receipt-pace.png" width="280" alt="A chart of pace for each kilometre of the run">
+<img src="Screenshots/frames/04-04-receipt-pace.png" width="280" alt="A chart of pace for each kilometre of the run">
 <br><sub><b>Pace</b> — inspectable per kilometre</sub>
 </td>
 <td width="33%" valign="top">
-<img src="Screenshots/08-photo.png" width="280" alt="A photograph printed as a hard two-tone poster of dots">
+<img src="Screenshots/frames/05-08-photo.png" width="280" alt="A photograph printed as a hard two-tone poster of dots">
 <br><sub><b>Photo</b> — printed three ways</sub>
 </td>
 <td width="33%" valign="top">
-<img src="Screenshots/05-share.png" width="280" alt="The share preview, with the route ends trimmed and the note included">
+<img src="Screenshots/frames/06-05-share.png" width="280" alt="The share preview, with the route ends trimmed and the note included">
 <br><sub><b>Share</b> — with the route ends trimmed</sub>
 </td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+<img src="Screenshots/frames/07-07-tracking.png" width="280" alt="Recording a run: a quiet map with a bright orange track">
+<br><sub><b>Recording</b> — a quiet map, a vivid track</sub>
+</td>
+<td width="33%" valign="top">
+<img src="Screenshots/frames/08-06-kept.png" width="280" alt="The collection of kept receipts">
+<br><sub><b>Kept</b> — the receipts you kept</sub>
+</td>
+<td width="33%" valign="top"></td>
 </tr>
 </table>
 
@@ -55,9 +66,11 @@ with the ends of the route trimmed.
 </tr>
 </table>
 
-These are the real app running in the simulator, captured by
-[`design/capture-screenshots.sh`](design/capture-screenshots.sh). The images
-are pinned to one width so they line up.
+These are the real app running in the simulator. The captures come from
+[`design/capture-screenshots.sh`](design/capture-screenshots.sh) and the frames
+from [`design/render-frames.mjs`](design/render-frames.mjs); the capture fails
+if the recording did not record anything, so a blank map cannot slip in. The
+images are pinned to one width so they line up.
 
 ## Status
 
