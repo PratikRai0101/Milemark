@@ -97,26 +97,43 @@ final class RunRecorderTests: XCTestCase {
 
     func testPauseStopsTheClock() {
         let recorder = recorder()
+        var moment = Date()
+        recorder.clock = { moment }
         recorder.prepare()
         recorder.start()
 
-        let start = Date()
-        recorder.tick(now: start)
-        recorder.tick(now: start.addingTimeInterval(10))
-        XCTAssertEqual(recorder.elapsedTime, 10, accuracy: 0.5)
+        moment = moment.addingTimeInterval(10)
+        recorder.tick()
+        XCTAssertEqual(recorder.elapsedTime(), 10, accuracy: 0.5)
 
-        recorder.pause(now: start.addingTimeInterval(10))
-        recorder.tick(now: start.addingTimeInterval(60))
+        recorder.pause()
+        moment = moment.addingTimeInterval(60)
+        recorder.tick()
         // Time after a pause is not counted.
-        XCTAssertEqual(recorder.elapsedTime, 10, accuracy: 0.5)
+        XCTAssertEqual(recorder.elapsedTime(), 10, accuracy: 0.5)
+    }
+
+    func testTheClockKeepsCountingWhileTheAppIsSuspended() {
+        let recorder = recorder()
+        var moment = Date()
+        recorder.clock = { moment }
+        recorder.prepare()
+        recorder.start()
+
+        // The phone is locked for a minute and the timer does not fire.
+        moment = moment.addingTimeInterval(60)
+        recorder.tick()
+        XCTAssertEqual(recorder.elapsedTime(), 60, accuracy: 0.5)
     }
 
     func testAutoPauseWaitsForARealStop() {
         let recorder = recorder()
+        var moment = Date()
+        recorder.clock = { moment }
         recorder.prepare()
         recorder.start()
 
-        let start = Date()
+        let start = moment
         // Cover some ground first.
         for index in 0..<5 {
             recorder.ingest([
@@ -145,11 +162,13 @@ final class RunRecorderTests: XCTestCase {
         ])
 
         // Ten seconds of standing still is not enough.
-        recorder.tick(now: start.addingTimeInterval(20))
+        moment = start.addingTimeInterval(20)
+        recorder.tick()
         XCTAssertEqual(recorder.phase, .recording)
 
         // Twenty seconds is.
-        recorder.tick(now: start.addingTimeInterval(32))
+        moment = start.addingTimeInterval(32)
+        recorder.tick()
         XCTAssertEqual(recorder.phase, .paused)
         XCTAssertTrue(recorder.isAutoPaused)
     }
