@@ -107,7 +107,7 @@ struct SharePreviewView: View {
     /// The card that is actually exported, with no app chrome around it.
     private var previewCard: some View {
         VStack(spacing: 0) {
-            Text("A ROUTE WORTH KEEPING")
+            Text("A ROUTE, PRINTED")
                 .font(.system(size: 11, design: .monospaced))
                 .tracking(0.5)
                 .foregroundStyle(Theme.paperSecondary)
@@ -119,8 +119,9 @@ struct SharePreviewView: View {
                 .multilineTextAlignment(.center)
                 .padding(.top, 5)
 
-            Text("RUN RECEIPT")
-                .font(.system(size: 11, design: .monospaced))
+            Text("MILEMARK")
+                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .tracking(0.6)
                 .foregroundStyle(Theme.paperSecondary)
                 .padding(.top, 6)
 
@@ -149,7 +150,7 @@ struct SharePreviewView: View {
                     .padding(.top, 9)
             }
 
-            Text("A route worth keeping.")
+            Text("A route, printed.")
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundStyle(Theme.paperInk)
                 .padding(.top, 9)
