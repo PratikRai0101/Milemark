@@ -27,6 +27,9 @@ jobs:
       - name: List the available simulators
         run: xcrun simctl list devices available
 
+      - name: Check the readme
+        run: python3 design/check-readme.py
+
       - name: Build
         run: |
           xcodebuild build \
