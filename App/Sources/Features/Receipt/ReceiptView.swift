@@ -466,8 +466,12 @@ struct ReceiptPaper: View {
                     movingTime: previous.movingTime
                 ).map { current - $0 } ?? 0
             } ?? 0
+            let hasPace = paceDifference != 0 || RouteGeometry.paceSecondsPerKm(
+                distanceMeters: run.distanceMeters,
+                movingTime: run.movingTime
+            ) != nil
             let faster = paceDifference < 0
-            let samePace = abs(paceDifference) < 1
+            let samePace = hasPace && abs(paceDifference) < 1
             // The total time is only worth quoting when both runs covered a
             // comparable distance.
             let comparableDistance = previous.distanceMeters > 0
@@ -479,7 +483,10 @@ struct ReceiptPaper: View {
                     .tracking(0.4)
                     .foregroundStyle(Theme.paperSecondary)
                 if samePace {
-                    Text("\(Format.duration(abs(timeDifference))) \(timeDifference < 0 ? "quicker" : "slower") than \(previous.startedAt.formatted(.dateTime.day().month(.abbreviated)))")
+                    // The same pace, so the time is the whole story.
+                    Text(timeDifference == 0
+                        ? "The same time as \(previous.startedAt.formatted(.dateTime.day().month(.abbreviated)))"
+                        : "\(Format.duration(abs(timeDifference))) \(timeDifference < 0 ? "quicker" : "slower") than \(previous.startedAt.formatted(.dateTime.day().month(.abbreviated)))")
                         .font(.system(size: 13, weight: .bold, design: .monospaced))
                         .foregroundStyle(Theme.paperInk)
                 } else {

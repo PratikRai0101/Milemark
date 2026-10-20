@@ -11,6 +11,8 @@ import Observation
 public final class RunStore {
     public private(set) var runs: [Run] = []
     public private(set) var lastError: String?
+    /// Whether the runs file could not be read or set aside.
+    public private(set) var isUnreadable = false
 
     private let fileURL: URL
     private let encoder: JSONEncoder
@@ -70,7 +72,13 @@ public final class RunStore {
         let destination = fileURL
             .deletingLastPathComponent()
             .appending(path: "runs-unreadable-\(stamp).json")
-        try? FileManager.default.moveItem(at: fileURL, to: destination)
+        do {
+            try FileManager.default.moveItem(at: fileURL, to: destination)
+        } catch {
+            // If the file could not be moved, it must not be overwritten.
+            lastError = "Saved runs could not be read and could not be set aside: \(error.localizedDescription)"
+            isUnreadable = true
+        }
     }
 
     /// Writes the archive.
@@ -97,10 +105,16 @@ public final class RunStore {
     /// It reports whether the run reached the disk.
     @discardableResult
     public func add(_ run: Run) -> Bool {
+        let previous = runs
         runs.removeAll { $0.id == run.id }
         runs.append(run)
         runs.sort { $0.startedAt > $1.startedAt }
-        return save()
+        guard save() else {
+            // A run that did not reach the disk is not a saved run.
+            runs = previous
+            return false
+        }
+        return true
     }
 
     public func update(_ run: Run) {
@@ -146,8 +160,12 @@ public final class RunStore {
         return candidates
             .filter { candidate in
                 guard candidate.distanceMeters > 0, run.distanceMeters > 0 else { return false }
+                // The distance has to be plausible.
                 let difference = abs(candidate.distanceMeters - run.distanceMeters)
-                return difference / candidate.distanceMeters < 0.3
+                guard difference / candidate.distanceMeters < 0.3 else { return false }
+                // And it has to be the same place. The shape alone cannot say
+                // that: the same block run in another city has the same shape.
+                return RouteGeometry.startsNear(candidate.points, run.points)
             }
             .map { candidate in
                 (candidate, RouteGeometry.similarity(candidate.points, run.points))
