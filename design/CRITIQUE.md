@@ -142,3 +142,46 @@ No requests were declined. Round-2 verdict: **Done by the stop rule in critique.
 - Real geographic asset: `assets/kallang-map.svg`; provenance/projection/license/route/source extract in `assets/kallang-map.json`. OSM data is ODbL, original rendering CC0. Sample route follows Stadium Park Connector; not navigation-validated.
 
 Local interactive delivery: `node design/serve-prototype.mjs`, http://127.0.0.1:4177/prototype. Native inline comparison uses rendered screenshots and clearly distinguishes them from the interactive prototype. A local browser server is required for that link; the HTML can also be opened directly. Neither browser review nor these checks validate native tracking, battery use, background recovery, haptics or real-device keyboard behaviour.
+
+## App build — 20 October 2026
+
+The prototype is now a working iOS app. Two independent review passes were run
+against the built app rather than the prototype, and every finding was either
+fixed or listed below as remaining work.
+
+### What the reviews found and what was done
+
+The first pass found five defects that would have shipped:
+
+| Finding | Fix |
+|---|---|
+| Locking the phone stopped the recording | The clock is read from the dates, not from the view's timer, and the view no longer pauses on a scene change |
+| "Print receipt" never opened the receipt | The printed run is now the destination, and the recorder is prepared again afterwards |
+| Splits were timed from the first sample past the boundary | The crossing is interpolated, and time spent paused is excluded |
+| A failed save lost the run silently | The store reports the failure, the recording is kept, and a run that was not written is not in the archive |
+| The comparison could state the opposite result | The direction comes from the pace, and the time and the pace are quoted separately when they disagree |
+
+The second pass found the fixes above were incomplete in six places, all now
+closed: the clock was still read from a cached value, an automatic pause did
+not stop the clock, each piece of a route was normalised separately so a short
+leg filled the frame, three renderers still joined a pause with a straight
+line, the photograph was anchored at the corner instead of centred, and a route
+of the same shape somewhere else counted as the same route.
+
+### Current state
+
+- 33 unit tests and 5 UI tests, passing locally and on CI.
+- The receipt prints the route, the ASCII map, the pace chart and a photograph
+  in three ways; the ASCII map and the photograph are printed row by row.
+- Haptics, Liquid Glass where the system provides it, a zoom from the archive
+  into a receipt, and a reduced-motion path that removes travel without
+  removing anything.
+
+### Known limits
+
+- The receipt uses fixed type sizes. The paper is meant to be a printed
+  artefact, but the app's own text should follow Dynamic Type, and this is not
+  done.
+- Background recording is verified by construction and by tests, not on a
+  locked device.
+- The map is Apple's map, muted. A custom style is possible and is not done.
