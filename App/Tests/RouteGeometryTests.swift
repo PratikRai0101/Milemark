@@ -128,6 +128,49 @@ final class RouteGeometryTests: XCTestCase {
         XCTAssertEqual(splits.first?.kilometre, 1)
     }
 
+    func testSplitTimesAreInterpolatedAtTheBoundary() {
+        // A thousand metres is 0.009043 degrees of latitude.
+        let step = 1000.0 / 110_574.0
+        // 1,100 m at 330 s: the kilometre is crossed at 300 s, not 330 s.
+        let points = [
+            point(1.3000, 103.8000, at: 0),
+            point(1.3000 + step * 1.1, 103.8000, at: 330),
+            point(1.3000 + step * 2.1, 103.8000, at: 630)
+        ]
+        let splits = RouteGeometry.splits(points)
+        XCTAssertEqual(splits.count, 2)
+        XCTAssertEqual(splits[0].duration, 300, accuracy: 5)
+        XCTAssertEqual(splits[1].duration, 300, accuracy: 5)
+    }
+
+    func testSplitTimesExcludeAPause() {
+        // Two kilometres with a ten minute pause in the middle of the first.
+        let step = 1000.0 / 110_574.0
+        let points = [
+            point(1.3000, 103.8000, at: 0),
+            point(1.3000 + step * 1.1, 103.8000, at: 300),
+            point(1.3000 + step * 2.2, 103.8000, at: 900)
+        ]
+        let splits = RouteGeometry.splits(points, breaks: [2])
+        XCTAssertEqual(splits.count, 1)
+        // The kilometre was crossed about 300 s of running into the leg, not
+        // 900 s of clock: the pause is not counted.
+        XCTAssertEqual(splits[0].duration, 300 * 1000 / 1100, accuracy: 5)
+    }
+
+    func testOneSampleCanCrossSeveralBoundaries() {
+        // A single long hop across three kilometres.
+        let step = 1000.0 / 110_574.0
+        let points = [
+            point(1.3000, 103.8000, at: 0),
+            point(1.3000 + step * 3.0, 103.8000, at: 900)
+        ]
+        let splits = RouteGeometry.splits(points)
+        XCTAssertEqual(splits.count, 3)
+        XCTAssertEqual(splits[0].duration, 300, accuracy: 5)
+        XCTAssertEqual(splits[2].duration, 300, accuracy: 5)
+    }
+
     func testDurationFormatting() {
         XCTAssertEqual(Format.duration(12_265), "03:24:25")
         XCTAssertEqual(Format.duration(278), "04:38")
