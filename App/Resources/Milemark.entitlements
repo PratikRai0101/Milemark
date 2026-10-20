@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- HealthKit lets the app read the workouts and heart rate that the
+	     system already holds. The app never writes to Health, so there is
+	     no share entitlement here.
+
+	     Reading Health needs the HealthKit capability enabled for the
+	     app's identifier in the Apple Developer account. A build whose
+	     provisioning profile does not include it will fail to sign, which
+	     is clearer than an app that silently never receives any data. -->
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+	<key>com.apple.developer.healthkit.access</key>
+	<array/>
+</dict>
+</plist>
