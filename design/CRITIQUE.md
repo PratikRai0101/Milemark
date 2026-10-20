@@ -179,9 +179,15 @@ of the same shape somewhere else counted as the same route.
 
 ### Known limits
 
-- The receipt uses fixed type sizes. The paper is meant to be a printed
-  artefact, but the app's own text should follow Dynamic Type, and this is not
-  done.
+- The type follows the reader's Dynamic Type setting from the smallest size
+  to the largest, and the layouts give way rather than shrinking: the
+  receipt's statistics become two columns, the title wraps, the archive's
+  cards become one across, and the action bar gives each word its own row.
+  What is **not** done is scaling the *shared card*, which is an exported
+  image with a fixed canvas and keeps its composition by design.
 - Background recording is verified by construction and by tests, not on a
   locked device.
 - The map is Apple's map, muted. A custom style is possible and is not done.
+- The Health and Strava imports are implemented and their permission flows
+  are real, but the Strava one has never been run against live Strava
+  credentials, because the keys are deliberately not in the repository.
