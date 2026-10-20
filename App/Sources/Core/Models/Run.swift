@@ -68,6 +68,13 @@ public struct Run: Codable, Identifiable, Hashable, Sendable {
     /// Whether the user has kept this receipt in their collection.
     public var isCollected: Bool
     public var source: Source
+    /// The identifier this run carries in the system it came from.
+    ///
+    /// A run imported from another app keeps its original identifier here, so
+    /// that importing twice does not produce two copies of the same run.
+    public var sourceID: String?
+    /// Where the run came from, in the app's own words.
+    public var sourceName: String?
 
     public enum Source: String, Codable, Sendable {
         case recorded
@@ -88,7 +95,9 @@ public struct Run: Codable, Identifiable, Hashable, Sendable {
         points: [RoutePoint],
         segmentBreaks: [Int] = [],
         isCollected: Bool = false,
-        source: Source = .recorded
+        source: Source = .recorded,
+        sourceID: String? = nil,
+        sourceName: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -104,5 +113,7 @@ public struct Run: Codable, Identifiable, Hashable, Sendable {
         self.segmentBreaks = segmentBreaks
         self.isCollected = isCollected
         self.source = source
+        self.sourceID = sourceID
+        self.sourceName = sourceName
     }
 }
