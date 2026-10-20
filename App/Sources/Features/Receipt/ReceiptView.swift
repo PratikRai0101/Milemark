@@ -71,7 +71,7 @@ struct ReceiptView: View {
         .onPreferenceChange(GripPositionKey.self) { gripBottom = $0 }
         .background(Theme.ground)
         .scrollIndicators(.hidden)
-        .navigationTitle("Run receipt")
+        .navigationTitle("Printed record")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .safeAreaInset(edge: .bottom) {
@@ -158,35 +158,36 @@ struct ReceiptView: View {
     }
 }
 
-/// The dark physical output slot the paper emerges from.
+/// The lip of the tray the paper comes out of.
+///
+/// It is a metal edge rather than a black slot: a shallow rail with a lit top
+/// edge and a shadow beneath it, so the paper reads as resting in a printer
+/// tray.
 struct PrinterSlot: View {
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 17, style: .continuous)
+        ZStack(alignment: .bottom) {
+            Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [Color(white: 0.26), Color(white: 0.08)],
+                        colors: [Color(white: 0.74), Color(white: 0.44)],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                 )
-                .frame(height: 27)
-                .shadow(color: .black.opacity(0.12), radius: 3, y: 2)
+                .frame(height: 10)
 
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color(white: 0.79))
-                .frame(height: 11)
-                .padding(.horizontal, 13)
-                .shadow(color: .black.opacity(0.6), radius: 3, y: 2)
+            Rectangle()
+                .fill(.white.opacity(0.8))
+                .frame(height: 1)
 
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(Color(white: 0.93))
-                .frame(height: 5)
-                .padding(.horizontal, 14)
-                .offset(y: 8)
+            Rectangle()
+                .fill(.black.opacity(0.16))
+                .frame(height: 6)
+                .offset(y: 6)
+                .blur(radius: 3)
         }
+        .frame(height: 10)
         .padding(.horizontal, -16)
-        .padding(.vertical, 4)
         .accessibilityHidden(true)
     }
 }
@@ -231,7 +232,7 @@ struct ReceiptPaper: View {
         .background(Theme.paper)
         .foregroundStyle(Theme.paperInk)
         .shadow(color: .black.opacity(0.06), radius: 12, y: 6)
-        .clipShape(SerratedBottomShape())
+        .clipShape(TornEdgeShape())
         .mask {
             // The reveal is measured from the paper itself, so it cannot be
             // left showing a stale height.
@@ -260,11 +261,12 @@ struct ReceiptPaper: View {
     }
 
     private var header: some View {
-        HStack {
-            RunnerStamp()
+        HStack(alignment: .center) {
+            MilemarkGlyph()
             Spacer()
-            Text("Run receipt")
-                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+            Text("MILEMARK")
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .tracking(0.6)
         }
     }
 
@@ -294,40 +296,45 @@ struct ReceiptPaper: View {
     }
 
     private var graphicRegion: some View {
-        ZStack(alignment: .topLeading) {
+        ZStack(alignment: .bottomLeading) {
             ReceiptGraphicView(graphic: graphic, run: run, photoItem: photoItem)
 
-            Button {
-                showGraphicPicker = true
-            } label: {
-                HStack(spacing: 5) {
-                    Text(graphic.title)
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 10, weight: .semibold))
+            // The treatment is named on a strip along the bottom of the
+            // picture, the way a caption is set on a printed page.
+            HStack(spacing: 8) {
+                Button {
+                    showGraphicPicker = true
+                } label: {
+                    HStack(spacing: 5) {
+                        Text(graphic.title)
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 9, weight: .semibold))
+                    }
+                    .foregroundStyle(Theme.paperInk)
+                    .padding(.horizontal, 9)
+                    .frame(height: 26)
+                    .background(Theme.paper, in: Capsule())
                 }
-                .foregroundStyle(Theme.paperInk)
-                .padding(.horizontal, 12)
-                .frame(height: 30)
-                .background(Theme.paper, in: Capsule())
-            }
-            .buttonStyle(.plain)
-            .padding(7)
-            .accessibilityLabel("Change receipt graphic, currently \(graphic.title)")
-            .accessibilityIdentifier("graphic-badge")
+                .buttonStyle(.plain)
+                .accessibilityLabel("Change receipt graphic, currently \(graphic.title)")
+                .accessibilityIdentifier("graphic-badge")
 
-            if graphic == .photo {
-                PhotosPicker(selection: $photoItem, matching: .images) {
-                    Image(systemName: "photo.badge.plus")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Theme.paperInk)
-                        .frame(width: 44, height: 44)
-                        .background(Theme.paper, in: Circle())
+                if graphic == .photo {
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        Image(systemName: "photo.badge.plus")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(Theme.paperInk)
+                            .padding(.horizontal, 9)
+                            .frame(height: 26)
+                            .background(Theme.paper, in: Capsule())
+                    }
+                    .accessibilityLabel("Choose a photo to print")
                 }
-                .padding(7)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .accessibilityLabel("Choose a photo to print")
+
+                Spacer()
             }
+            .padding(8)
 
             if showGraphicPicker {
                 GraphicPicker(graphic: $graphic, isPresented: $showGraphicPicker)
@@ -418,25 +425,25 @@ struct ReceiptPaper: View {
     }
 
     private var footer: some View {
-        VStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 4) {
             if !run.note.isEmpty {
                 Text(run.note)
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(Theme.paperSecondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, 4)
             }
-            VStack(spacing: 1) {
-                Text("KEEP FOR YOUR RECORDS")
-                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                Text(Format.receiptStamp(run.startedAt))
-                    .font(.system(size: 11, design: .monospaced))
+            HStack(alignment: .firstTextBaseline) {
+                Text("LOGGED \(Format.receiptStamp(run.startedAt))")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                Spacer()
+                Text("PRINTED ON THIS PHONE")
+                    .font(.system(size: 9, design: .monospaced))
+                    .tracking(0.3)
+                    .foregroundStyle(Theme.paperSecondary)
             }
-            Text("A route worth keeping.")
-                .font(.system(size: 11, design: .monospaced))
         }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var tearGrip: some View {
@@ -534,57 +541,6 @@ enum ReceiptGraphic: String, CaseIterable, Identifiable {
     }
 }
 
-/// A rectangle whose bottom edge is torn rather than cut.
-struct SerratedBottomShape: Shape {
-    var toothWidth: CGFloat = 10
-    var toothHeight: CGFloat = 7
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - toothHeight))
-        var x = rect.maxX
-        while x > rect.minX {
-            let next = max(rect.minX, x - toothWidth)
-            path.addLine(to: CGPoint(x: next, y: rect.maxY - toothHeight))
-            path.addLine(to: CGPoint(x: next, y: rect.maxY))
-            x = next
-        }
-        path.closeSubpath()
-        return path
-    }
-}
-
-/// The three-runner mark printed at the top of every receipt.
-struct RunnerStamp: View {
-    var body: some View {
-        Canvas { context, size in
-            var path = Path()
-            path.move(to: CGPoint(x: size.width * 0.16, y: size.height * 0.18))
-            path.addArc(
-                center: CGPoint(x: size.width * 0.16, y: size.height * 0.18),
-                radius: size.height * 0.16,
-                startAngle: .degrees(0),
-                endAngle: .degrees(360),
-                clockwise: false
-            )
-            context.stroke(path, with: .color(Theme.paperInk), lineWidth: 2.6)
-
-            var body = Path()
-            body.move(to: CGPoint(x: size.width * 0.02, y: size.height * 0.55))
-            body.addLine(to: CGPoint(x: size.width * 0.30, y: size.height * 0.32))
-            body.addLine(to: CGPoint(x: size.width * 0.30, y: size.height * 0.72))
-            body.addLine(to: CGPoint(x: size.width * 0.06, y: size.height * 0.96))
-            body.move(to: CGPoint(x: size.width * 0.30, y: size.height * 0.40))
-            body.addLine(to: CGPoint(x: size.width * 0.52, y: size.height * 0.62))
-            body.addLine(to: CGPoint(x: size.width * 0.62, y: size.height * 0.30))
-            context.stroke(body, with: .color(Theme.paperInk), style: StrokeStyle(lineWidth: 2.6, lineCap: .round, lineJoin: .round))
-        }
-        .frame(width: 47, height: 25)
-        .accessibilityHidden(true)
-    }
-}
 
 struct ReceiptActionStyle: ButtonStyle {
     let isPrimary: Bool
