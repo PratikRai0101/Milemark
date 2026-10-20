@@ -27,6 +27,15 @@ struct RootView: View {
         case runs
         case record
         case kept
+
+        init?(rawValue: String) {
+            switch rawValue {
+            case "runs": self = .runs
+            case "record": self = .record
+            case "kept": self = .kept
+            default: return nil
+            }
+        }
     }
 
     var body: some View {
@@ -53,10 +62,13 @@ struct RootView: View {
         .toolbarBackground(Theme.ground, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
         .task {
-            // -showRecord opens the tracking screen, for screenshots and UI
-            // checks that need to start there.
-            if ProcessInfo.processInfo.arguments.contains("-showRecord") {
-                selection = .record
+            // -tab=runs|record|kept opens a particular tab, for screenshots
+            // and UI checks that need to start there.
+            if let requested = ProcessInfo.processInfo.arguments
+                .first(where: { $0.hasPrefix("-tab=") })?
+                .replacingOccurrences(of: "-tab=", with: ""),
+               let tab = Tab(rawValue: requested) {
+                selection = tab
             }
         }
     }
