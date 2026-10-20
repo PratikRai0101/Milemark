@@ -296,11 +296,16 @@ struct ReceiptPaper: View {
     }
 
     private var graphicRegion: some View {
-        ZStack(alignment: .bottomLeading) {
+        VStack(spacing: 0) {
+            // The picture. It is the whole of the printed plate, so nothing
+            // is ever laid over the route.
             ReceiptGraphicView(graphic: graphic, run: run, photoItem: photoItem)
+                .frame(maxWidth: .infinity)
+                .frame(height: 218)
+                .clipped()
 
-            // The treatment is named on a strip along the bottom of the
-            // picture, the way a caption is set on a printed page.
+            // The caption sits on a strip below the picture, the way a label
+            // sits under a plate, rather than over the top of it.
             HStack(spacing: 8) {
                 Button {
                     showGraphicPicker = true
@@ -313,7 +318,7 @@ struct ReceiptPaper: View {
                     }
                     .foregroundStyle(Theme.paperInk)
                     .padding(.horizontal, 9)
-                    .frame(height: 26)
+                    .frame(height: 24)
                     .background(Theme.paper, in: Capsule())
                 }
                 .buttonStyle(.plain)
@@ -326,7 +331,7 @@ struct ReceiptPaper: View {
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundStyle(Theme.paperInk)
                             .padding(.horizontal, 9)
-                            .frame(height: 26)
+                            .frame(height: 24)
                             .background(Theme.paper, in: Capsule())
                     }
                     .accessibilityLabel("Choose a photo to print")
@@ -334,16 +339,22 @@ struct ReceiptPaper: View {
 
                 Spacer()
             }
-            .padding(8)
-
-            if showGraphicPicker {
-                GraphicPicker(graphic: $graphic, isPresented: $showGraphicPicker)
+            .padding(.horizontal, 8)
+            .padding(.top, 7)
+            .frame(height: 32)
+            .overlay(alignment: .top) {
+                Rectangle().fill(Theme.paperSecondary.opacity(0.18)).frame(height: 1)
             }
         }
         .frame(height: 250)
         .background(Theme.graphic)
         .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
         .padding(.vertical, 15)
+        .overlay {
+            if showGraphicPicker {
+                GraphicPicker(graphic: $graphic, isPresented: $showGraphicPicker)
+            }
+        }
     }
 
     private var metrics: some View {
