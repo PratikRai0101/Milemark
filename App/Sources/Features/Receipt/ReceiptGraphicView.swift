@@ -9,6 +9,7 @@ struct ReceiptGraphicView: View {
     let graphic: ReceiptGraphic
     let run: Run
     var photoItem: PhotosPickerItem?
+    var photoTreatment: PhotoTreatment = .halftone
 
     var body: some View {
         switch graphic {
@@ -19,7 +20,7 @@ struct ReceiptGraphicView: View {
         case .pace:
             PaceTrendView(run: run)
         case .photo:
-            PhotoPrintView(item: photoItem)
+            PhotoPrintView(item: photoItem, treatment: photoTreatment)
         }
     }
 }
@@ -99,6 +100,8 @@ struct ASCIITraceView: View {
 
     private let columns = 40
     private let rows = 26
+    /// How much of the map has been printed, from 0 to 1.
+    @State private var printed = 0.0
 
     var body: some View {
         Canvas { context, size in
@@ -126,6 +129,11 @@ struct ASCIITraceView: View {
             let band = max(cellWidth, cellHeight) * 0.88
 
             for row in 0..<rows {
+                // The map is printed from the top down, the way a plotter
+                // would lay it down.
+                let rowProgress = (CGFloat(row) + 1) / CGFloat(rows)
+                let rowIsPrinted = rowProgress <= printed
+
                 for column in 0..<columns {
                     let centre = CGPoint(
                         x: (CGFloat(column) + 0.5) * cellWidth,
@@ -138,9 +146,17 @@ struct ASCIITraceView: View {
                     let text = Text(String(letter))
                         .font(.system(size: min(cellWidth, cellHeight) * 0.95, weight: onRoute ? .bold : .regular, design: .monospaced))
                         .foregroundStyle(onRoute ? Theme.paperInk : Theme.paperSecondary.opacity(0.16))
+                    // A row appears all at once, and a little darkly first so
+                    // the map appears to be inked.
+                    context.opacity = rowIsPrinted ? 1 : 0
                     context.draw(text, at: centre)
+                    context.opacity = 1
                 }
             }
+        }
+        .task(id: run.id) {
+            printed = 0
+            withAnimation(.linear(duration: 0.55)) { printed = 1 }
         }
         .accessibilityLabel("Route drawn with letters")
     }
@@ -269,70 +285,6 @@ struct PaceTrendView: View {
                     .offset(x: min(max(x - 22, 0), size.width - 44), y: baseline + 4)
             }
         }
-    }
-}
-
-/// A photographic print treatment.
-struct PhotoPrintView: View {
-    let item: PhotosPickerItem?
-
-    @State private var image: UIImage?
-
-    var body: some View {
-        ZStack {
-            Theme.graphic
-            if let image {
-                PhotoPrintImage(image: image)
-            } else {
-                Image(systemName: "camera.aperture")
-                    .font(.system(size: 34, weight: .light))
-                    .foregroundStyle(Theme.paperSecondary)
-            }
-        }
-        .task(id: item) {
-            image = await loadImage()
-        }
-        .accessibilityLabel("Photographic print treatment")
-    }
-
-    private func loadImage() async -> UIImage? {
-        guard let item else { return nil }
-        guard let data = try? await item.loadTransferable(type: Data.self) else { return nil }
-        return UIImage(data: data)
-    }
-}
-
-/// The printed photograph, treated like an ink-on-paper print.
-private struct PhotoPrintImage: View {
-    let image: UIImage
-
-    var body: some View {
-        Image(uiImage: image)
-            .resizable()
-            .scaledToFill()
-            .grayscale(1)
-            .contrast(1.6)
-            .overlay {
-                // A halftone screen, so the photograph reads as printed rather
-                // than as a screenshot.
-                Canvas { context, size in
-                    var dots = Path()
-                    let step: CGFloat = 3
-                    var y: CGFloat = 0
-                    while y < size.height {
-                        var x: CGFloat = 0
-                        while x < size.width {
-                            dots.addEllipse(in: CGRect(x: x, y: y, width: 1.1, height: 1.1))
-                            x += step
-                        }
-                        y += step
-                    }
-                    context.fill(dots, with: .color(.white.opacity(0.5)))
-                }
-                .blendMode(.screen)
-                .allowsHitTesting(false)
-            }
-            .clipped()
     }
 }
 
