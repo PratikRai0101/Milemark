@@ -188,12 +188,19 @@ struct SharePreviewView: View {
                 Text("Trim route ends")
                     .font(.system(size: 14))
             }
+            .onChange(of: trimsEnds) { _, _ in
+                // The prepared image no longer matches what is shown.
+                exportedFile = nil
+            }
             .frame(minHeight: 48)
             Divider().overlay(Theme.rule)
 
             Toggle(isOn: $includesNote) {
                 Text("Include note")
                     .font(.system(size: 14))
+            }
+            .onChange(of: includesNote) { _, _ in
+                exportedFile = nil
             }
             .disabled(run.note.isEmpty)
             .opacity(run.note.isEmpty ? 0.45 : 1)
