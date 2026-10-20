@@ -273,15 +273,39 @@ public enum RouteGeometry {
         return bounds
     }
 
+    /// Whether two routes start in the same place.
+    ///
+    /// The shape of a route says nothing about where it was: the same block
+    /// run in another city has the same shape. The start has to be near.
+    public static func startsNear(_ first: [RoutePoint], _ second: [RoutePoint], within metres: Double = 400) -> Bool {
+        guard let a = first.first, let b = second.first else { return false }
+        return distance(from: a.latitude, longitude1: a.longitude, to: b.latitude, longitude2: b.longitude) < metres
+    }
+
     /// The route as separate pieces, so a pause is not drawn as a straight
     /// line across the gap.
     ///
     /// Each piece is normalised on its own, which keeps a segment the same
     /// shape it was run.
     public static func normalisedSegments(_ points: [RoutePoint], breaks: [Int]) -> [[CGPoint]] {
-        segments(points, breaks: breaks)
-            .map { normalisedPoints(Array($0)) }
-            .filter { $0.count > 1 }
+        guard points.count > 1 else { return [] }
+        // The whole route is normalised once, so the pieces keep their
+        // relative size and position. Normalising each piece on its own would
+        // make a short leg fill the frame.
+        let normalised = normalisedPoints(points)
+        let breakSet = Set(breaks)
+        var result: [[CGPoint]] = []
+        var current: [CGPoint] = []
+        for (index, point) in normalised.enumerated() {
+            if breakSet.contains(index), !current.isEmpty {
+                result.append(current)
+                current = []
+                continue
+            }
+            current.append(point)
+        }
+        if !current.isEmpty { result.append(current) }
+        return result.filter { $0.count > 1 }
     }
 
     /// Resamples a route into a fixed number of points, evenly spaced along
