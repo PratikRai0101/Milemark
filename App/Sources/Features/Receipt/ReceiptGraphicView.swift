@@ -111,21 +111,24 @@ struct ASCIITraceView: View {
                 with: .color(Theme.graphic)
             )
             guard run.points.count > 1 else { return }
-            let normalised = RouteGeometry.normalisedPoints(run.points)
-            guard let frame = RouteProjection.frame(for: normalised, in: size, inset: 0.9) else { return }
-
-            // The route as a line on the page.
-            var line: [CGPoint] = []
-            for point in normalised {
-                line.append(RouteProjection.location(for: point, in: frame))
+            // The route as one or more lines on the page. A pause is a gap, so
+            // the segments are drawn separately.
+            let segments = RouteGeometry.normalisedSegments(run.points, breaks: run.segmentBreaks)
+            var lines: [[CGPoint]] = []
+            var fieldRect = CGRect.null
+            for segment in segments {
+                guard let frame = RouteProjection.frame(for: segment, in: size, inset: 0.9) else { continue }
+                lines.append(segment.map { RouteProjection.location(for: $0, in: frame) })
+                fieldRect = fieldRect.isNull ? frame : fieldRect.union(frame)
             }
+            guard !lines.isEmpty else { return }
 
             let cellWidth = size.width / CGFloat(columns)
             let cellHeight = size.height / CGFloat(rows)
             let letters = Array("RUN")
             // The printed field reaches a little beyond the route, so the map
             // has an edge rather than bleeding into the paper.
-            let field = frame.insetBy(dx: -cellWidth * 1.5, dy: -cellHeight * 1.5)
+            let field = fieldRect.insetBy(dx: -cellWidth * 1.5, dy: -cellHeight * 1.5)
             // The route is printed as a stroke a little over one cell wide.
             let band = max(cellWidth, cellHeight) * 0.88
 
@@ -142,7 +145,7 @@ struct ASCIITraceView: View {
                     )
                     guard field.contains(centre) else { continue }
 
-                    let onRoute = ASCIITraceView.distance(from: centre, to: line) <= band
+                    let onRoute = lines.contains { ASCIITraceView.distance(from: centre, to: $0) <= band }
                     let letter = letters[(column * 7 + row * 3) % letters.count]
                     let text = Text(String(letter))
                         .font(.system(size: min(cellWidth, cellHeight) * 0.95, weight: onRoute ? .bold : .regular, design: .monospaced))

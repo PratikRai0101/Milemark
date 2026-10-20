@@ -19,9 +19,14 @@ struct SharePreviewView: View {
     @State private var isExporting = false
     @Environment(\.dismiss) private var dismiss
 
-    private var displayedPoints: [RoutePoint] {
-        trimsEnds ? RouteGeometry.trimmed(run.points, fraction: 0.15) : run.points
+    private var trimmedRoute: ([RoutePoint], [Int]) {
+        trimsEnds
+            ? RouteGeometry.trimmed(run.points, breaks: run.segmentBreaks, fraction: 0.15)
+            : (run.points, run.segmentBreaks)
     }
+
+    private var displayedPoints: [RoutePoint] { trimmedRoute.0 }
+    private var displayedBreaks: [Int] { trimmedRoute.1 }
 
     var body: some View {
         NavigationStack {
@@ -235,27 +240,30 @@ struct SharePreviewView: View {
 /// The route as it will be shared.
 struct ShareRoutePreview: View {
     let points: [RoutePoint]
+    var breaks: [Int] = []
 
     var body: some View {
         Canvas { context, size in
             context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Theme.graphic))
             guard points.count > 1 else { return }
-            let normalised = RouteGeometry.normalisedPoints(points)
-            guard let frame = RouteProjection.frame(for: normalised, in: size, inset: 0.88) else { return }
-            var path = Path()
-            for (index, point) in normalised.enumerated() {
-                let location = RouteProjection.location(for: point, in: frame)
-                if index == 0 {
-                    path.move(to: location)
-                } else {
-                    path.addLine(to: location)
+            // A pause is a gap, so the route is drawn in segments.
+            for segment in RouteGeometry.normalisedSegments(points, breaks: breaks) {
+                guard let frame = RouteProjection.frame(for: segment, in: size, inset: 0.88) else { continue }
+                var path = Path()
+                for (index, point) in segment.enumerated() {
+                    let location = RouteProjection.location(for: point, in: frame)
+                    if index == 0 {
+                        path.move(to: location)
+                    } else {
+                        path.addLine(to: location)
+                    }
                 }
+                context.stroke(
+                    path,
+                    with: .color(Theme.paperInk),
+                    style: StrokeStyle(lineWidth: 2.7, lineCap: .round, lineJoin: .round)
+                )
             }
-            context.stroke(
-                path,
-                with: .color(Theme.paperInk),
-                style: StrokeStyle(lineWidth: 2.7, lineCap: .round, lineJoin: .round)
-            )
         }
         .accessibilityLabel("Route preview")
     }

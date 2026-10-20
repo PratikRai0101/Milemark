@@ -220,23 +220,26 @@ private struct RunTile: View {
 /// The printed shape of a route.
 struct RouteSilhouette: View {
     let points: [RoutePoint]
+    var breaks: [Int] = []
     var lineWidth: CGFloat = 2.1
 
     var body: some View {
         Canvas { context, size in
             guard points.count > 1 else { return }
-            let normalised = RouteGeometry.normalisedPoints(points)
-            guard let frame = RouteProjection.frame(for: normalised, in: size) else { return }
-            var path = Path()
-            for (index, point) in normalised.enumerated() {
-                let location = RouteProjection.location(for: point, in: frame)
-                if index == 0 {
-                    path.move(to: location)
-                } else {
-                    path.addLine(to: location)
+            // A pause is a gap, so the route is drawn in segments.
+            for segment in RouteGeometry.normalisedSegments(points, breaks: breaks) {
+                guard let frame = RouteProjection.frame(for: segment, in: size) else { continue }
+                var path = Path()
+                for (index, point) in segment.enumerated() {
+                    let location = RouteProjection.location(for: point, in: frame)
+                    if index == 0 {
+                        path.move(to: location)
+                    } else {
+                        path.addLine(to: location)
+                    }
                 }
+                context.stroke(path, with: .color(Theme.ink), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
             }
-            context.stroke(path, with: .color(Theme.ink), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
         }
         .accessibilityHidden(true)
     }
