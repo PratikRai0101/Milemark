@@ -109,18 +109,25 @@ public final class RunStore {
         runs.filter { Calendar.current.isDate($0.startedAt, inSameDayAs: date) }
     }
 
-    /// The closest earlier run of the same route.
+    /// The most recent earlier run of the same route.
     ///
     /// Two runs count as the same route when their shapes match closely
-    /// enough, however different the number of GPS samples in each.
+    /// enough, however different the number of GPS samples in each. The
+    /// distance has to be plausible too, or the same shape run somewhere
+    /// else would count as the same route.
     public func similarRun(to run: Run, above similarity: Double = 0.9) -> Run? {
         let candidates = runs.filter { $0.id != run.id && $0.startedAt < run.startedAt }
         return candidates
+            .filter { candidate in
+                guard candidate.distanceMeters > 0, run.distanceMeters > 0 else { return false }
+                let difference = abs(candidate.distanceMeters - run.distanceMeters)
+                return difference / candidate.distanceMeters < 0.3
+            }
             .map { candidate in
                 (candidate, RouteGeometry.similarity(candidate.points, run.points))
             }
             .filter { $0.1 >= similarity }
-            .max { $0.1 < $1.1 }?
+            .max { $0.0.startedAt < $1.0.startedAt }?
             .0
     }
 
