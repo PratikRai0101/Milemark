@@ -54,6 +54,7 @@ capture "02-receipt-route" -seedDemoData -openReceipt
 capture "03-receipt-ascii" -seedDemoData -openReceipt -graphic=ascii
 capture "04-receipt-pace" -seedDemoData -openReceipt -graphic=pace
 capture "05-share" -seedDemoData -openReceipt -showShare
+capture "08-photo" -seedDemoData -openReceipt -graphic=photo -demoPhoto -treatment=poster
 capture "06-kept" -seedDemoData -tab=kept
 
 # The live map needs a location to show the route.

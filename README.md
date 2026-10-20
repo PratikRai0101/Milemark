@@ -138,6 +138,28 @@ xcrun simctl location booted set 1.3050,103.8700
 GitHub Actions builds the app and runs the tests on every push and pull
 request.
 
+## Motion and feel
+
+The app is meant to be *felt*, not just looked at.
+
+| Interaction | What happens | Haptic |
+|---|---|---|
+| The paper feeds out | The sheet travels out of the tray over 1.1 s, with a shadow following the exposed edge | A run of soft transients along the feed, so the receipt is felt as it prints |
+| Tapping a route | The route grows into the receipt | A light impact |
+| Changing the treatment | The picture changes in place, inside a fixed frame | A selection tick |
+| The ASCII map appears | The map is laid down row by row | — |
+| A photograph is printed | The dot screen, dither or poster is printed row by row | — |
+| Tearing off | The paper follows the finger, then falls away | A landing, then a confirmation |
+| Saving | The button becomes a tick | A confirmation |
+
+Two rules shape it. Haptics are never on every tap — that is the motion
+equivalent of every button being loud. And a long operation is felt as it
+happens rather than announced at the end.
+
+The action bar is on **Liquid Glass** where the system provides it (iOS 26 and
+later), and on a matched flat bar where it does not, so the app still supports
+iOS 18 without the bar feeling broken.
+
 ## The receipt
 
 The paper comes out of a metal tray rail and stays in one place while the
@@ -151,6 +173,10 @@ the end, because a pull in the middle of a long receipt is a scroll. The paper
 then follows the finger, and released short of the threshold it springs back
 into the slot. The **Tear off** button in the action bar does the same thing
 without the gesture.
+
+A photograph can be printed three ways — a dot screen, an ordered dither, and
+a hard two-tone poster. Each is laid down row by row, the way a plotter
+prints, and the treatment is chosen from the caption strip under the picture.
 
 A receipt also compares itself with the last time the same route was run. The
 comparison is made on the shape of the route rather than on its samples, so two
