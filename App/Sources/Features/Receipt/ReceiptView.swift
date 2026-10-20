@@ -22,6 +22,7 @@ struct ReceiptView: View {
     @State private var showShare = false
     @State private var showGraphicPicker = false
     @State private var photoItem: PhotosPickerItem?
+    @State private var graphicChanged = false
     @State private var viewportHeight: CGFloat = 0
     @State private var gripBottom: CGFloat = 0
 
@@ -104,29 +105,34 @@ struct ReceiptView: View {
     // MARK: - Actions
 
     private var actions: some View {
-        HStack(spacing: 8) {
-            Button {
-                isCollected.toggle()
-                store.setCollected(isCollected, for: run.id)
-            } label: {
-                Label(isCollected ? "Saved" : "Save", systemImage: isCollected ? "checkmark" : "square.and.arrow.down")
-            }
-            .buttonStyle(ReceiptActionStyle(isPrimary: true))
+        // The three actions share one glass surface, so they sit together the
+        // way a set of controls on a layer of glass does.
+        LiquidGlassBar {
+            HStack(spacing: 8) {
+                Button {
+                    isCollected.toggle()
+                    store.setCollected(isCollected, for: run.id)
+                    Haptics.shared.success()
+                } label: {
+                    Label(isCollected ? "Saved" : "Save", systemImage: isCollected ? "checkmark" : "square.and.arrow.down")
+                }
+                .buttonStyle(ReceiptActionStyle(isPrimary: true))
 
-            Button {
-                tearOff()
-            } label: {
-                Label("Tear off", systemImage: "doc.on.doc")
-            }
-            .buttonStyle(ReceiptActionStyle(isPrimary: false))
+                Button {
+                    tearOff()
+                } label: {
+                    Label("Tear off", systemImage: "doc.on.doc")
+                }
+                .buttonStyle(ReceiptActionStyle(isPrimary: false))
 
-            Button {
-                showShare = true
-            } label: {
-                Label("Share", systemImage: "square.and.arrow.up")
+                Button {
+                    showShare = true
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                }
+                .buttonStyle(ReceiptActionStyle(isPrimary: false))
             }
-            .buttonStyle(ReceiptActionStyle(isPrimary: false))
-            .accessibilityIdentifier("share-receipt")
+            .padding(6)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 8)
@@ -148,11 +154,13 @@ struct ReceiptView: View {
         guard !isTearing else { return }
         isTearing = true
         store.setCollected(true, for: run.id)
+        Haptics.shared.impact(.medium)
         withAnimation(.easeIn(duration: 0.42)) {
             tearProgress = 3
         }
         Task {
             try? await Task.sleep(for: .milliseconds(460))
+            Haptics.shared.success()
             dismiss()
         }
     }
@@ -257,6 +265,8 @@ struct ReceiptPaper: View {
             // value again if the view is rebuilt means the paper can never be
             // left hidden behind the slot.
             feedProgress = 1
+            // The print is felt as it happens, not announced at the end.
+            Haptics.shared.printTicks(over: 1.1)
         }
     }
 
@@ -354,6 +364,10 @@ struct ReceiptPaper: View {
             if showGraphicPicker {
                 GraphicPicker(graphic: $graphic, isPresented: $showGraphicPicker)
             }
+        }
+        .onChange(of: graphic) { _, _ in
+            // Changing the treatment is a selection, so it ticks.
+            Haptics.shared.selection()
         }
     }
 
@@ -571,5 +585,6 @@ struct ReceiptActionStyle: ButtonStyle {
             .opacity(configuration.isPressed ? 0.85 : 1)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.spring(duration: 0.22, bounce: 0), value: configuration.isPressed)
+            .sensoryFeedback(.impact(weight: .light), trigger: configuration.isPressed)
     }
 }
