@@ -33,8 +33,6 @@ public final class RunRecorder: NSObject {
     public private(set) var phase: Phase = .idle
     public private(set) var points: [RoutePoint] = []
     public private(set) var segmentBreaks: [Int] = []
-    public private(set) var elapsedTime: TimeInterval = 0
-    public private(set) var movingTime: TimeInterval = 0
     public private(set) var distanceMeters: Double = 0
     public private(set) var elevationGainMeters: Double = 0
     public private(set) var currentCoordinate: CLLocationCoordinate2D?
@@ -45,12 +43,48 @@ public final class RunRecorder: NSObject {
     /// Whether the recorder paused itself because the runner stopped moving.
     public private(set) var isAutoPaused = false
 
+    // MARK: - Timing
+
+    /// The time the recorder last read its clock.
+    ///
+    /// It is what the elapsed time is measured against, and it is what makes
+    /// the screen update.
+    public private(set) var now: Date = Date()
+
+    /// The clock the recorder reads.
+    ///
+    /// It is injected so the timing can be tested without waiting for real
+    /// seconds to pass.
+    var clock: () -> Date = { Date() }
+
+    /// The wall-clock time of the run, not counting time spent paused.
+    ///
+    /// It is worked out from the dates rather than from a timer, so it keeps
+    /// counting when the phone is locked and the app is suspended.
+    public func elapsedTime() -> TimeInterval {
+        guard let startedAt else { return 0 }
+        let paused = accumulatedPause + (pausedAt.map { now.timeIntervalSince($0) } ?? 0)
+        return max(0, now.timeIntervalSince(startedAt) - paused)
+    }
+
+    /// The time the route actually covers.
+    ///
+    /// It is the span between the recorded samples, so the time spent paused
+    /// is not counted: no samples arrive while the run is paused.
+    public private(set) var movingTime: TimeInterval = 0
+
     // MARK: - Dependencies
 
     private let manager = CLLocationManager()
     private var lastAccepted: RoutePoint?
     private var lastResumedAt: Date?
-    private var lastTick: Date?
+    /// Set when the run is paused, so the paused stretch can be taken out.
+    private var pausedAt: Date?
+    /// The total time spent paused so far.
+    private var accumulatedPause: TimeInterval = 0
+    /// Set when the first sample after a resume is expected, so the break is
+    /// recorded on the route.
+    private var awaitingSegmentBreak = false
     private var altitudeBaseline: Double?
     /// When the runner last moved far enough to count as running.
     private var lastMovementAt: Date?
@@ -93,24 +127,33 @@ public final class RunRecorder: NSObject {
 
     public func start() {
         guard phase == .ready || phase == .paused else { return }
-        let now = Date()
+        let now = clock()
         if phase == .ready {
             startedAt = now
             points.removeAll()
             segmentBreaks.removeAll()
             distanceMeters = 0
             movingTime = 0
-            elapsedTime = 0
             elevationGainMeters = 0
             altitudeBaseline = nil
+            accumulatedPause = 0
+            pausedAt = nil
         } else {
             // Resuming must not connect the pause to the new position. The next
             // accepted fix starts a new segment, and no distance is counted
             // between the two sides of the gap.
+            if let pausedAt {
+                accumulatedPause += now.timeIntervalSince(pausedAt)
+            }
+            pausedAt = nil
             lastResumedAt = now
             lastAccepted = nil
+            // The break is recorded when the first sample after the pause
+            // arrives, so the route shows the gap rather than joining it.
+            awaitingSegmentBreak = true
         }
-        lastTick = now
+        isAutoPaused = false
+        lastMovementAt = nil
         phase = .recording
         manager.startUpdatingLocation()
     }
@@ -119,9 +162,9 @@ public final class RunRecorder: NSObject {
     ///
     /// The clock is passed in so a pause always agrees with the rest of the
     /// session's timing.
-    public func pause(now: Date = .now) {
+    public func pause(now: Date? = nil) {
         guard phase == .recording else { return }
-        tick(now: now)
+        pausedAt = now ?? clock()
         phase = .paused
         isAutoPaused = false
     }
@@ -136,7 +179,6 @@ public final class RunRecorder: NSObject {
         phase = .idle
         points.removeAll()
         segmentBreaks.removeAll()
-        elapsedTime = 0
         movingTime = 0
         distanceMeters = 0
         elevationGainMeters = 0
@@ -145,25 +187,22 @@ public final class RunRecorder: NSObject {
         startedAt = nil
         lastAccepted = nil
         lastResumedAt = nil
-        lastTick = nil
+        pausedAt = nil
+        accumulatedPause = 0
+        awaitingSegmentBreak = false
         altitudeBaseline = nil
         lastError = nil
         isAutoPaused = false
         lastMovementAt = nil
     }
 
-    /// Advances the clock. Called by the tracking view's timer so the numbers
-    /// stay live even when the location stream is quiet.
-    public func tick(now: Date = .now) {
-        guard let lastTick else {
-            self.lastTick = now
-            return
-        }
-        let delta = now.timeIntervalSince(lastTick)
-        self.lastTick = now
+    /// Called by the tracking view's timer.
+    ///
+    /// The clock itself is worked out from the dates, so this only has to
+    /// notice when the runner has stopped.
+    public func tick() {
+        now = clock()
         guard phase == .recording else { return }
-        elapsedTime += delta
-        movingTime += delta
         checkForAutoPause(now: now)
     }
 
@@ -197,7 +236,9 @@ public final class RunRecorder: NSObject {
             currentSpeedMetersPerSecond = point.speed
 
             guard phase == .recording else { continue }
-            guard RouteGeometry.isAcceptable(point) else {
+            // The recorder's clock is the reference, not the wall clock, so a
+            // sample is judged against the same time as everything else.
+            guard RouteGeometry.isAcceptable(point, now: now) else {
                 if point.horizontalAccuracy < 0 {
                     locationStatus = .weak
                 }
@@ -223,9 +264,9 @@ public final class RunRecorder: NSObject {
                 // Standing still produces noise, not distance.
                 guard step > 0.4 else { continue }
 
-                // The first accepted sample after a resume starts a new segment.
-                // The distance covered while the run was paused is neither
-                // counted nor drawn.
+                // The first accepted sample after a resume starts a new
+                // segment. The distance covered while the run was paused is
+                // neither counted nor drawn.
                 if let resumedAt = lastResumedAt, previous.timestamp < resumedAt {
                     lastResumedAt = nil
                     lastAccepted = point
@@ -235,6 +276,9 @@ public final class RunRecorder: NSObject {
                 }
 
                 distanceMeters += step
+                // The time the route covers. No samples arrive while the run
+                // is paused, so the pause is not counted.
+                movingTime += point.timestamp.timeIntervalSince(previous.timestamp)
                 if step > 5 {
                     lastMovementAt = point.timestamp
                 }
@@ -247,6 +291,14 @@ public final class RunRecorder: NSObject {
                 altitudeBaseline = point.altitude
             } else {
                 altitudeBaseline = point.altitude
+                if awaitingSegmentBreak {
+                    // The first sample of a new segment: record the break so
+                    // the route shows the gap instead of joining it.
+                    awaitingSegmentBreak = false
+                    if !points.isEmpty {
+                        segmentBreaks.append(points.count)
+                    }
+                }
             }
 
             lastAccepted = point
@@ -303,7 +355,7 @@ public final class RunRecorder: NSObject {
             note: note,
             startedAt: startedAt ?? .now,
             endedAt: .now,
-            elapsedTime: elapsedTime,
+            elapsedTime: elapsedTime(),
             movingTime: movingTime,
             distanceMeters: distanceMeters,
             elevationGainMeters: elevationGainMeters,
