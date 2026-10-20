@@ -13,6 +13,7 @@ import SwiftUI
 /// itself so it keeps its full colour while the basemap is quiet.
 struct TrackingMapView: UIViewRepresentable {
     let points: [RoutePoint]
+    var breaks: [Int] = []
     let currentCoordinate: CLLocationCoordinate2D?
     let followsRunner: Bool
     let onUserInteraction: () -> Void
@@ -45,8 +46,10 @@ struct TrackingMapView: UIViewRepresentable {
         // The route overlay is replaced rather than updated, so a long run
         // does not accumulate thousands of overlays.
         mapView.removeOverlays(mapView.overlays)
-        if points.count > 1 {
-            let coordinates = points.map(\.coordinate)
+        // One overlay per segment, so a pause is a gap in the track rather
+        // than a straight line across it.
+        for segment in RouteGeometry.segments(points, breaks: breaks) where segment.count > 1 {
+            let coordinates = segment.map(\.coordinate)
             let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
             mapView.addOverlay(polyline, level: .aboveRoads)
         }

@@ -82,6 +82,7 @@ struct TrackingView: View {
     private var map: some View {
         TrackingMapView(
             points: recorder.points,
+            breaks: recorder.segmentBreaks,
             currentCoordinate: recorder.currentCoordinate,
             followsRunner: followsRunner,
             onUserInteraction: { followsRunner = false }
