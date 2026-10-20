@@ -49,32 +49,58 @@ public final class RunStore {
     // MARK: - Persistence
 
     private func load() {
-        guard let data = try? Data(contentsOf: fileURL) else { return }
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
         do {
+            let data = try Data(contentsOf: fileURL)
             runs = try decoder.decode([Run].self, from: data).sorted { $0.startedAt > $1.startedAt }
         } catch {
+            // The file is unreadable. It is moved aside rather than
+            // overwritten, so nothing is lost and the next save can start
+            // from a clean file.
             lastError = "Saved runs could not be read: \(error.localizedDescription)"
+            quarantine()
             runs = []
         }
     }
 
-    public func save() {
+    /// Moves an unreadable file aside so it is never overwritten.
+    private func quarantine() {
+        let stamp = ISO8601DateFormatter().string(from: .now)
+            .replacingOccurrences(of: ":", with: "-")
+        let destination = fileURL
+            .deletingLastPathComponent()
+            .appending(path: "runs-unreadable-\(stamp).json")
+        try? FileManager.default.moveItem(at: fileURL, to: destination)
+    }
+
+    /// Writes the archive.
+    ///
+    /// It reports whether the write succeeded, so a caller can keep the run
+    /// it was trying to save rather than losing it silently.
+    @discardableResult
+    public func save() -> Bool {
         do {
             let data = try encoder.encode(runs)
             try data.write(to: fileURL, options: .atomic)
             lastError = nil
+            return true
         } catch {
             lastError = "Runs could not be saved: \(error.localizedDescription)"
+            return false
         }
     }
 
     // MARK: - Collection
 
-    public func add(_ run: Run) {
+    /// Adds a run and saves the archive.
+    ///
+    /// It reports whether the run reached the disk.
+    @discardableResult
+    public func add(_ run: Run) -> Bool {
         runs.removeAll { $0.id == run.id }
         runs.append(run)
         runs.sort { $0.startedAt > $1.startedAt }
-        save()
+        return save()
     }
 
     public func update(_ run: Run) {

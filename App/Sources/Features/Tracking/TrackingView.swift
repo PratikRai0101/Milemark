@@ -18,6 +18,7 @@ struct TrackingView: View {
     @State private var draftTitle = ""
     @State private var draftNote = ""
     @State private var printedRun: Run?
+    @State private var saveFailed = false
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -52,6 +53,12 @@ struct TrackingView: View {
         .navigationDestination(item: $printedRun) { run in
             ReceiptView(run: run)
         }
+        .alert("The run could not be saved", isPresented: $saveFailed) {
+            Button("Keep the recording") { }
+            Button("Try again") { saveFailed = false }
+        } message: {
+            Text(store.lastError ?? "The runs file could not be written. The recording has been kept so you can try again.")
+        }
         .sheet(isPresented: $isReviewing) {
             ReviewSheet(
                 title: $draftTitle,
@@ -67,9 +74,15 @@ struct TrackingView: View {
                         title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Outdoor run" : title,
                         note: note.trimmingCharacters(in: .whitespacesAndNewlines)
                     )
-                    store.add(run)
-                    isReviewing = false
-                    printedRun = run
+                    // The run is only cleared once it has reached the disk,
+                    // so a failed write does not lose it.
+                    if store.add(run) {
+                        isReviewing = false
+                        printedRun = run
+                        recorder.reset()
+                    } else {
+                        saveFailed = true
+                    }
                     return run
                 }
             )
@@ -115,11 +128,25 @@ struct TrackingView: View {
 
     private var placeLabel: String {
         switch recorder.phase {
-        case .idle, .ready: "Ready when you are"
+        case .idle, .ready:
+            switch recorder.locationStatus {
+            case .denied: "Location is off"
+            case .restricted: "Location is restricted"
+            case .searching: "Finding your position"
+            default: "Ready when you are"
+            }
         case .recording: "Recording"
         case .paused: "Paused"
         case .finished: "Finished"
         }
+    }
+
+    /// Whether the runner can actually record.
+    ///
+    /// A run cannot be recorded without location access, so the app says so
+    /// rather than pretending to record a route it cannot see.
+    private var canRecord: Bool {
+        recorder.locationStatus != .denied && recorder.locationStatus != .restricted
     }
 
     private func recentre() {
@@ -192,7 +219,17 @@ struct TrackingView: View {
 
     private var hintText: String {
         switch recorder.phase {
-        case .idle, .ready: "Start when you are ready. The route records as you run."
+        case .idle, .ready:
+            switch recorder.locationStatus {
+            case .denied:
+                "Milemark needs location access to record a route. Turn it on in Settings."
+            case .restricted:
+                "Location is restricted on this device, so a route cannot be recorded."
+            case .searching:
+                "Finding your position. The route starts when the first fix arrives."
+            default:
+                "Start when you are ready. The route records as you run."
+            }
         case .recording: "Recording. Pause if you stop."
         case .paused:
             recorder.isAutoPaused
@@ -207,12 +244,25 @@ struct TrackingView: View {
         HStack(spacing: 10) {
             switch recorder.phase {
             case .idle, .ready:
-                Button {
-                    recorder.start()
-                } label: {
-                    Label("Start run", systemImage: "play.fill")
+                if canRecord {
+                    Button {
+                        recorder.start()
+                    } label: {
+                        Label("Start run", systemImage: "play.fill")
+                    }
+                    .buttonStyle(PrimaryActionStyle())
+                } else {
+                    // A route cannot be recorded without location access, so
+                    // the app says so instead of pretending to record.
+                    Button {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        Label("Open Settings", systemImage: "gear")
+                    }
+                    .buttonStyle(PrimaryActionStyle())
                 }
-                .buttonStyle(PrimaryActionStyle())
 
             case .recording:
                 Button {
