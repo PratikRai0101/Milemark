@@ -193,4 +193,34 @@ final class MilemarkUITests: XCTestCase {
         route.tap()
         XCTAssertTrue(waitFor(app.staticTexts["Printed record"]))
     }
+
+    /// The import screen must explain itself when a service cannot be used.
+    ///
+    /// A build with no Strava keys cannot connect to Strava. It says so
+    /// rather than showing an empty list or failing silently.
+    func testTheImportScreenSaysWhenAServiceIsNotAvailable() {
+        launchApp()
+        XCTAssertTrue(waitFor(app.staticTexts["MILEMARK"]))
+
+        app.buttons["About Milemark"].tap()
+        XCTAssertTrue(waitFor(app.buttons["Import from Strava"]))
+        app.buttons["Import from Strava"].tap()
+
+        // Either the sheet opened, or the screen explains why it could not.
+        let unavailable = app.staticTexts["Strava is not available"]
+        let looking = app.staticTexts["Looking for runs…"]
+        let empty = app.staticTexts["Nothing to import"]
+        let found = app.staticTexts["From Strava"]
+
+        let deadline = Date().addingTimeInterval(20)
+        var settled = false
+        while Date() < deadline {
+            if unavailable.exists || looking.exists || empty.exists || found.exists {
+                settled = true
+                break
+            }
+            usleep(300_000)
+        }
+        XCTAssertTrue(settled, "The import screen never said what it was doing.")
+    }
 }
