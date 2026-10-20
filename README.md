@@ -262,12 +262,24 @@ wrong is worse than no route at all:
   The test is deliberately slow, so a pause at traffic lights is not mistaken
   for the end of the run.
 
+The clock is worked out from the dates rather than from a timer, so **a run
+keeps recording with the phone locked** and in a pocket. The moving time is
+the span of the recorded samples, so a pause is not counted against the pace.
+
+Kilometre splits interpolate the moment each boundary was crossed, rather
+than taking the time of the first sample past it, so a route sampled every ten
+metres does not report every split ten metres slow.
+
 None of this makes a route guaranteed accurate. It makes the app refuse to
 invent distance when the signal is poor.
 
 ## Privacy
 
 Runs are stored locally on the device. There is no account and no server.
+
+If a run cannot be written to disk, the app says so and **keeps the
+recording** rather than losing it quietly. A runs file that cannot be read is
+moved aside rather than overwritten.
 
 The share preview leaves out the recorded date, time and location, and can trim
 the first and last 15% of the route. That is not anonymity: a distinctive route,
