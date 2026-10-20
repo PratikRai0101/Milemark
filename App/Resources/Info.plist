@@ -26,8 +26,29 @@
 	<string>Milemark records your route so it can be printed as a run receipt.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Milemark keeps recording your run in the background so the route is complete when you finish.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Milemark reads your workouts and their heart rate so they can be printed as run receipts. It never writes to Health.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Milemark reads your workouts and their heart rate so they can be printed as run receipts. It never writes to Health.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Choose a photo to print on your run receipt.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>app.milemark.strava</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>milemark</string>
+			</array>
+		</dict>
+	</array>
+	<key>StravaClientID</key>
+	<string>$(STRAVA_CLIENT_ID)</string>
+	<key>StravaClientSecret</key>
+	<string>$(STRAVA_CLIENT_SECRET)</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
