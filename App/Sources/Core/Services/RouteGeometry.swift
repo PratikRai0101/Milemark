@@ -221,6 +221,31 @@ public enum RouteGeometry {
         return result.count >= 2 ? result : points
     }
 
+    /// Trims a route and keeps the breaks inside it.
+    ///
+    /// A gap that falls outside the trimmed part is dropped, and one that
+    /// falls inside it moves with the points that are kept.
+    public static func trimmed(_ points: [RoutePoint], breaks: [Int], fraction: Double) -> ([RoutePoint], [Int]) {
+        guard points.count > 2, fraction > 0, fraction < 0.5 else { return (points, breaks) }
+        let cumulative = cumulativeDistances(points)
+        guard let total = cumulative.last, total > 0 else { return (points, breaks) }
+        let lowerBound = total * fraction
+        let upperBound = total * (1 - fraction)
+
+        var kept: [RoutePoint] = []
+        var keptBreaks: [Int] = []
+        for (index, point) in points.enumerated() {
+            if cumulative[index] >= lowerBound && cumulative[index] <= upperBound {
+                if breaks.contains(index), !kept.isEmpty {
+                    keptBreaks.append(kept.count)
+                }
+                kept.append(point)
+            }
+        }
+        guard kept.count >= 2 else { return (points, breaks) }
+        return (kept, keptBreaks)
+    }
+
     /// Bounding box of a set of points, with a minimum span so a single-point
     /// route still produces a usable box.
     public struct Bounds: Equatable, Sendable {        public var minLatitude: Double
@@ -246,6 +271,17 @@ public enum RouteGeometry {
             bounds.maxLongitude = max(bounds.maxLongitude, point.longitude)
         }
         return bounds
+    }
+
+    /// The route as separate pieces, so a pause is not drawn as a straight
+    /// line across the gap.
+    ///
+    /// Each piece is normalised on its own, which keeps a segment the same
+    /// shape it was run.
+    public static func normalisedSegments(_ points: [RoutePoint], breaks: [Int]) -> [[CGPoint]] {
+        segments(points, breaks: breaks)
+            .map { normalisedPoints(Array($0)) }
+            .filter { $0.count > 1 }
     }
 
     /// Resamples a route into a fixed number of points, evenly spaced along
