@@ -15,15 +15,41 @@ import SwiftUI
 /// The API only exists in the SDK that shipped with Swift 6.2, so an older
 /// toolchain cannot even compile a reference to it, however carefully it is
 /// marked as available.
+/// The shape of a glass surface.
+///
+/// A row of controls is a capsule. A column of controls is a rounded
+/// rectangle, because a capsule around three stacked buttons would be mostly
+/// empty glass at the top and bottom.
+public enum GlassShape {
+    case capsule
+    case roundedRect(cornerRadius: CGFloat)
+
+    /// The shape as something the system can draw.
+    var anyShape: AnyShape {
+        switch self {
+        case .capsule:
+            AnyShape(Capsule())
+        case .roundedRect(let radius):
+            AnyShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+        }
+    }
+}
+
 public struct LiquidGlassBar<Content: View>: View {
+    let shape: GlassShape
     @ViewBuilder var content: Content
+
+    public init(shape: GlassShape = .capsule, @ViewBuilder content: () -> Content) {
+        self.shape = shape
+        self.content = content()
+    }
 
     public var body: some View {
         #if compiler(>=6.2)
         if #available(iOS 26.0, *) {
             GlassEffectContainer(spacing: 8) {
                 content
-                    .glassEffect(.regular, in: .capsule)
+                    .glassEffect(.regular, in: shape.anyShape)
             }
         } else {
             flatBar
@@ -38,11 +64,11 @@ public struct LiquidGlassBar<Content: View>: View {
         content
             .background(
                 Theme.tile.opacity(0.94),
-                in: Capsule()
+                in: shape.anyShape
             )
             .overlay {
-                Capsule()
-                    .strokeBorder(.white.opacity(0.5), lineWidth: 0.5)
+                shape.anyShape
+                    .stroke(Color.white.opacity(0.5), lineWidth: 0.5)
             }
     }
 }

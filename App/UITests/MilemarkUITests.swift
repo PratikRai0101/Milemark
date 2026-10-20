@@ -15,6 +15,14 @@ final class MilemarkUITests: XCTestCase {
         app.launch()
     }
 
+    /// Launches the app at a particular text size.
+    private func launchApp(textSize: String) {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launchArguments = ["-seedDemoData", "-dynamicTypeSize=\(textSize)"]
+        app.launch()
+    }
+
     /// Finds a button whose label begins with the given text.
     private func button(startingWith text: String) -> XCUIElement {
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", text)).firstMatch
@@ -141,5 +149,48 @@ final class MilemarkUITests: XCTestCase {
         XCTAssertTrue(waitFor(app.staticTexts["Share preview"]))
         XCTAssertTrue(app.staticTexts["Trim route ends"].exists)
         XCTAssertTrue(app.staticTexts["A ROUTE, PRINTED"].exists)
+    }
+
+    /// The receipt must stay readable at the largest text sizes.
+    ///
+    /// This is the case where fixed type falls apart: the title is cut off,
+    /// the action buttons shrink to a single letter each, and the statistics
+    /// no longer fit. The layout has to give way instead.
+    func testReceiptStaysReadableAtTheLargestTextSize() {
+        launchApp(textSize: "accessibility3")
+        XCTAssertTrue(waitFor(app.staticTexts["MILEMARK"]))
+
+        let route = button(startingWith: "Interval")
+        XCTAssertTrue(waitFor(route))
+        route.tap()
+        XCTAssertTrue(waitFor(app.staticTexts["Printed record"]))
+
+        // The title is whole, not cut off.
+        XCTAssertTrue(app.staticTexts["INTERVAL"].exists)
+
+        // The statistics are on the paper and are not truncated.
+        XCTAssertTrue(app.staticTexts["DISTANCE"].exists)
+        XCTAssertTrue(app.staticTexts["9.34 KM"].exists)
+
+        // The actions keep their words.
+        XCTAssertTrue(app.buttons["Save"].exists || app.buttons["Saved"].exists)
+        XCTAssertTrue(app.buttons["Tear off"].exists)
+        XCTAssertTrue(app.buttons["Share"].exists)
+    }
+
+    /// The archive must not clip a run's name at the largest text size.
+    func testArchiveStaysReadableAtTheLargestTextSize() {
+        launchApp(textSize: "accessibility3")
+        XCTAssertTrue(waitFor(app.staticTexts["MILEMARK"]))
+
+        // The distance is on the card, whole.
+        XCTAssertTrue(waitFor(app.staticTexts["9.34"]))
+        XCTAssertTrue(app.staticTexts["KM"].exists)
+
+        // And the card can still be opened.
+        let route = button(startingWith: "Interval")
+        XCTAssertTrue(waitFor(route))
+        route.tap()
+        XCTAssertTrue(waitFor(app.staticTexts["Printed record"]))
     }
 }

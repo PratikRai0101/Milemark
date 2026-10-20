@@ -12,6 +12,7 @@ struct ReceiptView: View {
     @Environment(RunStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let run: Run
 
@@ -112,30 +113,30 @@ struct ReceiptView: View {
     private var actions: some View {
         // The three actions share one glass surface, so they sit together the
         // way a set of controls on a layer of glass does.
-        LiquidGlassBar {
-            HStack(spacing: 8) {
-                Button {
-                    isCollected.toggle()
-                    store.setCollected(isCollected, for: run.id)
-                    Haptics.shared.success()
-                } label: {
-                    Label(isCollected ? "Saved" : "Save", systemImage: isCollected ? "checkmark" : "square.and.arrow.down")
+        LiquidGlassBar(shape: actionBarShape) {
+            // Side by side when the labels fit. At the larger text sizes they
+            // do not, and a row of buttons that has shrunk to a single letter
+            // each is worse than a column, so the bar becomes a column.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    saveButton
+                    tearButton
+                    shareButton
                 }
-                .buttonStyle(ReceiptActionStyle(isPrimary: true))
-
-                Button {
-                    tearOff()
-                } label: {
-                    Label("Tear off", systemImage: "doc.on.doc")
+                // A column of three is tall enough to eat the screen at the
+                // larger text sizes, so the secondary actions share a row.
+                VStack(spacing: 8) {
+                    saveButton
+                    HStack(spacing: 8) {
+                        tearButton
+                        shareButton
+                    }
                 }
-                .buttonStyle(ReceiptActionStyle(isPrimary: false))
-
-                Button {
-                    showShare = true
-                } label: {
-                    Label("Share", systemImage: "square.and.arrow.up")
+                VStack(spacing: 8) {
+                    saveButton
+                    tearButton
+                    shareButton
                 }
-                .buttonStyle(ReceiptActionStyle(isPrimary: false))
             }
             .padding(6)
         }
@@ -150,6 +151,44 @@ struct ReceiptView: View {
             )
             .ignoresSafeArea()
         }
+    }
+
+    /// The glass takes a different shape when the actions are stacked.
+    private var actionBarShape: GlassShape {
+        dynamicTypeSize.isAccessibilitySize
+            ? .roundedRect(cornerRadius: 24)
+            : .capsule
+    }
+
+    private var saveButton: some View {        Button {
+            isCollected.toggle()
+            store.setCollected(isCollected, for: run.id)
+            Haptics.shared.success()
+        } label: {
+            Label(isCollected ? "Saved" : "Save", systemImage: isCollected ? "checkmark" : "square.and.arrow.down")
+            .lineLimit(1)
+        }
+        .buttonStyle(ReceiptActionStyle(isPrimary: true))
+    }
+
+    private var tearButton: some View {
+        Button {
+            tearOff()
+        } label: {
+            Label("Tear off", systemImage: "doc.on.doc")
+                .lineLimit(1)
+        }
+        .buttonStyle(ReceiptActionStyle(isPrimary: false))
+    }
+
+    private var shareButton: some View {
+        Button {
+            showShare = true
+        } label: {
+            Label("Share", systemImage: "square.and.arrow.up")
+                .lineLimit(1)
+        }
+        .buttonStyle(ReceiptActionStyle(isPrimary: false))
     }
     /// Detaches the receipt and returns to the archive.
     ///
@@ -226,6 +265,7 @@ struct ReceiptPaper: View {
     @State private var feedProgress: CGFloat = 0
     @State private var isPulling = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var tearArmed = false
 
     var body: some View {
@@ -288,34 +328,134 @@ struct ReceiptPaper: View {
             MilemarkGlyph()
             Spacer()
             Text("MILEMARK")
-                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .font(Theme.Font.labelStrong)
                 .tracking(0.6)
         }
     }
 
     private var heading: some View {
         VStack(alignment: .leading, spacing: 3) {
-            HStack(alignment: .top, spacing: 8) {
-                Text(run.title.uppercased())
-                    .font(.system(size: 20, weight: .bold, design: .monospaced))
-                    .tracking(-0.8)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.7)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 8)
-                Text("SINGAPORE")
-                    .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                    .lineLimit(1)
+            // The title and the city sit side by side when there is room for
+            // them. When there is not, the city drops below rather than
+            // squeezing the title into a truncated stub.
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 8) {
+                    title
+                    Spacer(minLength: 8)
+                    city
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    title
+                    city
+                }
             }
-            HStack {
-                Text("OUTDOOR RUN")
-                Spacer()
-                Text(Format.receiptDate(run.startedAt))
+            // The same for the run type and the date.
+            ViewThatFits(in: .horizontal) {
+                HStack {
+                    Text("OUTDOOR RUN")
+                    Spacer()
+                    Text(Format.receiptDate(run.startedAt))
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("OUTDOOR RUN")
+                    Text(Format.receiptDate(run.startedAt))
+                }
             }
-            .font(.system(size: 11, design: .monospaced))
+            .font(Theme.Font.footnote)
             .foregroundStyle(Theme.paperSecondary)
         }
         .foregroundStyle(Theme.paperInk)
+    }
+
+    /// The name of the run. It wraps rather than truncating: a receipt whose
+    /// title is cut off is a receipt that misreports the run.
+    private var title: some View {
+        Text(run.title.uppercased())
+            .font(Theme.Font.paperTitle)
+            .tracking(-0.8)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var city: some View {
+        Text("SINGAPORE")
+            .font(Theme.Font.value)
+            .lineLimit(1)
+    }
+
+/// The badge that opens the graphic chooser.
+    ///
+    /// It is always on the strip: it is the only way back to the other
+    /// treatments once a photograph has been chosen.
+    private var graphicBadge: some View {
+        Button {
+            showGraphicPicker = true
+        } label: {
+            HStack(spacing: 5) {
+                // The photograph names itself with its treatment chips, so
+                // the title is left out to make room.
+                if graphic != .photo {
+                    Text(graphic.title)
+                        .font(Theme.Font.labelStrong)
+                        .lineLimit(1)
+                }
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .foregroundStyle(Theme.paperInk)
+            .fixedSize()
+            .padding(.horizontal, 9)
+            .frame(minHeight: 24)
+            .background(Theme.paper, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Change receipt graphic, currently \(graphic.title)")
+        .accessibilityIdentifier("graphic-badge")
+    }
+
+    /// The photograph controls, which only appear on a photograph receipt.
+    ///
+    /// The chips scroll sideways rather than being squeezed, so a long
+    /// treatment name is never cut off.
+    @ViewBuilder
+    private var photoControls: some View {
+        if graphic == .photo {
+            ScrollView(.horizontal) {
+                HStack(spacing: 8) {
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        Image(systemName: "photo.badge.plus")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Theme.paperInk)
+                            .padding(.horizontal, 9)
+                            .frame(minHeight: 24)
+                            .background(Theme.paper, in: Capsule())
+                    }
+                    .accessibilityLabel("Choose a photo to print")
+
+                    // The same photograph can be printed several ways.
+                    ForEach(PhotoTreatment.allCases) { treatment in
+                        Button {
+                            photoTreatment = treatment
+                        } label: {
+                            Text(treatment.title)
+                                .font(Theme.Font.labelStrong)
+                                .lineLimit(1)
+                                .fixedSize()
+                                .foregroundStyle(photoTreatment == treatment ? Theme.ground : Theme.paperInk)
+                                .padding(.horizontal, 8)
+                                .frame(minHeight: 24)
+                                .background(
+                                    photoTreatment == treatment ? Theme.paperInk : Theme.paper,
+                                    in: Capsule()
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Print the photo as \(treatment.title)")
+                    }
+                }
+                .padding(.vertical, 1)
+            }
+            .scrollIndicators(.hidden)
+        }
     }
 
     private var graphicRegion: some View {
@@ -329,71 +469,25 @@ struct ReceiptPaper: View {
 
             // The caption sits on a strip below the picture, the way a label
             // sits under a plate, rather than over the top of it.
-            HStack(spacing: 8) {
-                // The chooser is always here. It is the only way back to the
-                // other treatments once a photograph has been chosen.
-                Button {
-                    showGraphicPicker = true
-                } label: {
-                    HStack(spacing: 5) {
-                        // The photograph names itself with its treatment
-                        // chips, so the title is left out to make room.
-                        if graphic != .photo {
-                            Text(graphic.title)
-                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                                .lineLimit(1)
-                        }
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 9, weight: .semibold))
-                    }
-                    .foregroundStyle(Theme.paperInk)
-                    .fixedSize()
-                    .padding(.horizontal, 9)
-                    .frame(height: 24)
-                    .background(Theme.paper, in: Capsule())
+            //
+            // The badge and the photograph's treatment chips share the strip.
+            // At the larger text sizes they do not fit side by side, so the
+            // chips move to a row of their own and scroll sideways if even
+            // that is too much.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    graphicBadge
+                    photoControls
+                    Spacer(minLength: 0)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Change receipt graphic, currently \(graphic.title)")
-                .accessibilityIdentifier("graphic-badge")
-
-                if graphic == .photo {
-                    PhotosPicker(selection: $photoItem, matching: .images) {
-                        Image(systemName: "photo.badge.plus")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(Theme.paperInk)
-                            .padding(.horizontal, 9)
-                            .frame(height: 24)
-                            .background(Theme.paper, in: Capsule())
-                    }
-                    .accessibilityLabel("Choose a photo to print")
-
-                    // The same photograph can be printed several ways.
-                    ForEach(PhotoTreatment.allCases) { treatment in
-                        Button {
-                            photoTreatment = treatment
-                        } label: {
-                            Text(treatment.title)
-                                .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                                .lineLimit(1)
-                                .fixedSize()
-                                .foregroundStyle(photoTreatment == treatment ? Theme.ground : Theme.paperInk)
-                                .padding(.horizontal, 8)
-                                .frame(height: 24)
-                                .background(
-                                    photoTreatment == treatment ? Theme.paperInk : Theme.paper,
-                                    in: Capsule()
-                                )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Print the photo as \(treatment.title)")
-                    }
+                VStack(alignment: .leading, spacing: 8) {
+                    graphicBadge
+                    photoControls
                 }
-
-                Spacer()
             }
             .padding(.horizontal, 8)
             .padding(.top, 7)
-            .frame(height: 32)
+            .frame(minHeight: 32)
             .overlay(alignment: .top) {
                 Rectangle().fill(Theme.paperSecondary.opacity(0.18)).frame(height: 1)
             }
@@ -425,26 +519,31 @@ struct ReceiptPaper: View {
             ("Elevation", "\(Int(run.elevationGainMeters)) m"),
             ("Calories", "—")
         ]
+        // At the larger text sizes three columns of figures do not fit, so
+        // the receipt becomes two columns rather than shrinking the numbers
+        // back down to something unreadable.
+        let columns = Theme.receiptColumns(for: dynamicTypeSize)
         return LazyVGrid(
-            columns: Array(repeating: GridItem(.flexible(), spacing: 9), count: 3),
+            columns: Array(repeating: GridItem(.flexible(), spacing: 9), count: columns),
             spacing: 14
         ) {
             ForEach(Array(values.enumerated()), id: \.offset) { index, value in
                 VStack(spacing: 2) {
                     Text(value.0.uppercased())
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(Theme.Font.label)
                         .tracking(-0.35)
                         .foregroundStyle(Theme.paperSecondary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.85)
                     Text(value.1)
-                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .font(Theme.Font.metricValue)
                         .tracking(-0.55)
                         .foregroundStyle(Theme.paperInk)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
                 }
-                .frame(maxWidth: .infinity, alignment: index % 3 == 1 ? .center : (index % 3 == 0 ? .leading : .trailing))
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: index % columns == 1 ? .center : (index % columns == 0 ? .leading : .trailing)
+                )
             }
         }
     }
@@ -479,7 +578,7 @@ struct ReceiptPaper: View {
 
             VStack(spacing: 3) {
                 Text(samePace ? "SAME PACE ON THE SAME ROUTE" : (faster ? "FASTER ON THE SAME ROUTE" : "SLOWER ON THE SAME ROUTE"))
-                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .font(Theme.Font.labelStrong)
                     .tracking(0.4)
                     .foregroundStyle(Theme.paperSecondary)
                 if samePace {
@@ -487,16 +586,16 @@ struct ReceiptPaper: View {
                     Text(timeDifference == 0
                         ? "The same time as \(previous.startedAt.formatted(.dateTime.day().month(.abbreviated)))"
                         : "\(Format.duration(abs(timeDifference))) \(timeDifference < 0 ? "quicker" : "slower") than \(previous.startedAt.formatted(.dateTime.day().month(.abbreviated)))")
-                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .font(Theme.Font.metricValue)
                         .foregroundStyle(Theme.paperInk)
                 } else {
                     Text("\(Format.paceDifference(abs(paceDifference))) per km \(faster ? "faster" : "slower")")
-                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .font(Theme.Font.metricValue)
                         .foregroundStyle(Theme.paperInk)
                 }
                 if !samePace, comparableDistance {
                     Text("\(Format.duration(abs(timeDifference))) \(timeDifference < 0 ? "quicker" : "slower") in total")
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(Theme.Font.footnote)
                         .foregroundStyle(Theme.paperSecondary)
                 }
             }
@@ -515,17 +614,17 @@ struct ReceiptPaper: View {
         VStack(alignment: .leading, spacing: 4) {
             if !run.note.isEmpty {
                 Text(run.note)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(Theme.Font.footnote)
                     .foregroundStyle(Theme.paperSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, 4)
             }
             HStack(alignment: .firstTextBaseline) {
                 Text("LOGGED \(Format.receiptStamp(run.startedAt))")
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .font(Theme.Font.labelStrong)
                 Spacer()
                 Text("PRINTED ON THIS PHONE")
-                    .font(.system(size: 9, design: .monospaced))
+                    .font(Theme.Font.label)
                     .tracking(0.3)
                     .foregroundStyle(Theme.paperSecondary)
             }
@@ -536,9 +635,9 @@ struct ReceiptPaper: View {
     private var tearGrip: some View {
         HStack(spacing: 7) {
             Image(systemName: isAtEnd ? "arrow.down" : "arrow.down.right")
-                .font(.system(size: 11, weight: .semibold))
+                .font(Theme.Font.labelStrong)
             Text(gripTitle)
-                .font(.system(size: 11, design: .monospaced))
+                .font(Theme.Font.footnote)
         }
         .foregroundStyle(Theme.paperSecondary)
         .frame(maxWidth: .infinity)
@@ -634,10 +733,15 @@ struct ReceiptActionStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 11, weight: .regular))
+            .font(Theme.Font.label)
             .labelStyle(.titleAndIcon)
+            .lineLimit(1)
             .frame(maxWidth: .infinity)
-            .frame(height: 55)
+            // The height is a minimum, not a fixed size. A fixed height would
+            // clip the label at the larger text sizes, which is exactly when
+            // the label matters most.
+            .frame(minHeight: 55)
+            .padding(.vertical, 6)
             .background(
                 isPrimary ? Theme.ink : Theme.tile,
                 in: Capsule()

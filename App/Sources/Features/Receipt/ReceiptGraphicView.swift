@@ -233,12 +233,12 @@ struct PaceTrendView: View {
 
                     // The axis reads where the run started and ended.
                     let start = Text("0 KM")
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(Theme.Font.footnote)
                         .foregroundStyle(Theme.paperSecondary)
                     context.draw(start, at: CGPoint(x: 8, y: baseline + 16), anchor: .leading)
 
                     let end = Text("\(run.distanceMeters / 1000, specifier: "%.1f") KM")
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(Theme.Font.footnote)
                         .foregroundStyle(Theme.paperSecondary)
                     context.draw(end, at: CGPoint(x: size.width - 8, y: baseline + 16), anchor: .trailing)
                 }
@@ -307,7 +307,7 @@ struct PaceTrendView: View {
                 .frame(width: 1, height: baseline - 4)
                 .offset(x: x)
             Text(Format.pace(values[selection]))
-                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .font(Theme.Font.labelStrong)
                 .foregroundStyle(Theme.paper)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
@@ -315,7 +315,7 @@ struct PaceTrendView: View {
                 .offset(x: min(max(x - 30, 0), size.width - 62), y: 12)
             if let fastest, fastest == selection {
                 Text("FASTEST")
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                    .font(Theme.Font.labelStrong)
                     .foregroundStyle(Theme.paperSecondary)
                     .offset(x: min(max(x - 22, 0), size.width - 44), y: baseline + 4)
             }
@@ -337,16 +337,16 @@ struct GraphicPicker: View {
                 } label: {
                     HStack {
                         Text(option.title)
-                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                            .font(Theme.Font.labelStrong)
                         Spacer()
                         if option == graphic {
                             Image(systemName: "checkmark")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(Theme.Font.metricValue)
                         }
                     }
                     .foregroundStyle(Theme.paperInk)
                     .padding(.horizontal, 12)
-                    .frame(height: 44)
+                    .frame(minHeight: 44)
                     .background(Theme.paper, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 9, style: .continuous)
