@@ -69,8 +69,9 @@ surfaces are still provisional.
 | Comparison with the last run on the same route | Working, by pace |
 | Haptics | Working |
 | Liquid Glass action bar | On iOS 26 and later; a matched flat bar elsewhere |
-| Strava import | Not implemented — the archive header is demo data |
-| Health / heart rate | Not implemented — the receipt shows `—` |
+| Dynamic Type | Working, from the smallest size to the largest, with the layouts reflowing rather than shrinking |
+| Strava import | Implemented: OAuth, token refresh, activity import. Needs a client ID and secret to connect |
+| Health / heart rate | Implemented: reads workouts and their heart rate. Needs the HealthKit capability on the app's identifier |
 
 ## Requirements
 
@@ -114,7 +115,45 @@ standing still, implausible jumps, pausing and the auto-pause threshold.
 `MilemarkUITests` drives the app end to end — opening a receipt, changing
 the graphic, pulling the paper short of the tear and past it, tearing off,
 and opening the share preview. A screenshot cannot show whether a gesture
-behaves.
+behaves. It also opens the app at the largest text size, where a layout that
+only works at the default size falls apart.
+
+## Importing from other apps
+
+Two services can bring runs into the archive. Both are optional, and both
+say what they need when they cannot be used.
+
+**Health.** The app asks to read workouts and their heart rate, and never
+asks to write. HealthKit's workouts carry no route, so their receipts show
+the numbers without a drawn shape.
+
+Reading Health needs the **HealthKit capability** enabled for the app's
+identifier in the Apple Developer account, and a provisioning profile that
+includes it. Without one, the build will not sign, and the app says the
+HealthKit entitlement is missing.
+
+**Strava.** The reader allows the app in a system sheet, so the app never
+sees a password. The code that comes back is checked against the nonce that
+was sent, and the token is kept in the keychain rather than with the runs.
+
+Strava issues a client ID and secret when an application is created at
+[strava.com/settings/api](https://www.strava.com/settings/api). They are
+build settings, not values in the repository:
+
+```sh
+# in the project settings, or in an .xcconfig
+STRAVA_CLIENT_ID = "your client id"
+STRAVA_CLIENT_SECRET = "your client secret"
+```
+
+The redirect URI registered with Strava must be `milemark://strava/callback`,
+which is what the app asks for.
+
+A build without those keys is not broken: the import screen says that it has
+no Strava keys and what to add.
+
+Imported runs keep their own numbers and are marked with where they came
+from. Importing the same activity twice does not produce two copies of it.
 
 ## Sample activities
 
@@ -132,6 +171,12 @@ xcrun simctl launch booted app.milemark.app -seedDemoData -openReceipt
 
 # open the recording screen and start a run
 xcrun simctl launch booted app.milemark.app -showRecord -startRecording
+
+# open a screen at a particular text size
+xcrun simctl launch booted app.milemark.app -dynamicTypeSize=accessibility3
+
+# open the import screens
+xcrun simctl launch booted app.milemark.app -openSettings -openImport=health
 ```
 
 A location can be fed to the simulator while a run is recording:
@@ -171,6 +216,31 @@ iOS 18 without the bar feeling broken.
 
 *The action bar on iOS 26. The paper's torn edge shows through the glass, which
 is the system material rather than a flat panel behind it.*
+
+## Text size
+
+The type is built from text styles, so it follows the reader's Dynamic Type
+setting from the smallest size to the largest. At the accessibility sizes the
+layouts give way rather than the type shrinking back down:
+
+- The receipt's statistics become two columns instead of three.
+- The title wraps instead of being cut off, and the run type and the date
+  drop to their own lines.
+- The action bar becomes a column, and the glass takes the shape of what is
+  inside it.
+- The archive's cards become one across, because a narrow card cannot hold
+  the text inside it.
+- Rows of figures become columns, so their labels keep their words whole.
+
+One thing deliberately does not scale: the **shared card**. It is exported as
+an image with a fixed canvas, so its composition is held, and the preview
+shows exactly what will be shared.
+
+![The receipt at the largest text size](Screenshots/frames/09-09-receipt-large-text.png)
+
+*The same receipt at `accessibility3`. The title wraps, the statistics become
+two columns, and each action gets a row of its own so that no word is cut
+off.*
 
 ## The receipt
 
@@ -283,6 +353,17 @@ The share preview leaves out the recorded date, time and location, and can trim
 the first and last 15% of the route. That is not anonymity: a distinctive route,
 a run title or a personal note can still identify a place or a person. The app
 says so rather than implying a guarantee it cannot make.
+
+**Importing is the one place the app talks to someone else.** Both services
+are opt-in and are only contacted when the reader asks for them:
+
+- **Health.** The app asks to read and never asks to write. It reads the
+  workouts the system already holds, and it does not read anything else.
+- **Strava.** The reader allows the app in a system sheet, so the app never
+  sees a password. The access token is kept in the keychain, not in the runs
+  file, and it can be forgotten from the app at any time.
+
+Nothing is uploaded anywhere else. There is still no account and no server.
 
 ## Licence
 

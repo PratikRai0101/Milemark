@@ -85,7 +85,12 @@ public final class HealthKitService {
             options: [.strictStartDate]
         )
 
-        let workouts = try await loadWorkouts(predicate: predicate, limit: limit)
+        let workouts: [HKWorkout]
+        do {
+            workouts = try await loadWorkouts(predicate: predicate, limit: limit)
+        } catch {
+            throw HealthError.describe(error)
+        }
         var runs: [HealthRun] = []
         for workout in workouts {
             runs.append(try await makeRun(from: workout))
@@ -115,28 +120,37 @@ public final class HealthKitService {
     }
 
     /// The heart rate samples inside a workout, averaged.
-    private func averageHeartRate(in workout: HKWorkout) async throws -> Int? {
+    ///
+    /// A heart rate that cannot be read is not a reason to lose the run.
+    /// The workout still has its distance and its time, so a failed lookup
+    /// gives no average rather than giving nothing at all.
+    private func averageHeartRate(in workout: HKWorkout) async -> Int? {
         guard let type = HKQuantityType.quantityType(forIdentifier: .heartRate) else { return nil }
 
-        let samples: [HKQuantitySample] = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[HKQuantitySample], Error>) in
-            let query = HKSampleQuery(
-                sampleType: type,
-                predicate: HKQuery.predicateForSamples(
-                    withStart: workout.startDate,
-                    end: workout.endDate,
-                    options: [.strictStartDate]
-                ),
-                limit: HKObjectQueryNoLimit,
-                sortDescriptors: nil
-            ) { _, samples, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                    return
+        let samples: [HKQuantitySample]
+        do {
+            samples = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[HKQuantitySample], Error>) in
+                let query = HKSampleQuery(
+                    sampleType: type,
+                    predicate: HKQuery.predicateForSamples(
+                        withStart: workout.startDate,
+                        end: workout.endDate,
+                        options: [.strictStartDate]
+                    ),
+                    limit: HKObjectQueryNoLimit,
+                    sortDescriptors: nil
+                ) { _, samples, error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                        return
+                    }
+                    let quantities = (samples as? [HKQuantitySample]) ?? []
+                    continuation.resume(returning: quantities)
                 }
-                let quantities = (samples as? [HKQuantitySample]) ?? []
-                continuation.resume(returning: quantities)
+                store.execute(query)
             }
-            store.execute(query)
+        } catch {
+            return nil
         }
 
         guard !samples.isEmpty else { return nil }
@@ -146,8 +160,8 @@ public final class HealthKitService {
     }
 
     /// Builds a run from a workout.
-    private func makeRun(from workout: HKWorkout) async throws -> HealthRun {
-        let heartRate = try await averageHeartRate(in: workout)
+    func makeRun(from workout: HKWorkout) async throws -> HealthRun {
+        let heartRate = await averageHeartRate(in: workout)
         let distance = workout.totalDistance?.doubleValue(for: .meter()) ?? 0
         let energy = workout.totalEnergyBurned?.doubleValue(for: .kilocalorie()) ?? 0
 
@@ -203,13 +217,52 @@ public struct HealthRun: Sendable, Identifiable {
 }
 
 /// What can go wrong when reading from HealthKit.
-enum HealthError: LocalizedError {
+enum HealthError: LocalizedError, Equatable {
     case unavailable
+    /// The reader has not been asked yet, or has not answered.
+    case authorizationNotDetermined
+    /// The reader has said no.
+    case authorizationDenied
+    /// This build cannot read Health at all.
+    case entitlementMissing
+    /// Something else went wrong.
+    case underlying(String)
 
     var message: String {
         switch self {
         case .unavailable:
             "This device does not keep health data."
+        case .authorizationNotDetermined:
+            "Milemark has not been allowed to read Health yet."
+        case .authorizationDenied:
+            "Milemark is not allowed to read Health. You can change this in the Settings app."
+        case .entitlementMissing:
+            "This build of Milemark cannot read Health."
+        case .underlying(let message):
+            message
         }
+    }
+
+    /// Turns a HealthKit error into one of ours.
+    ///
+    /// The ones that matter are the ones the reader can act on. HealthKit
+    /// does not say whether permission was refused, so the codes are worked
+    /// out here rather than being passed straight through.
+    static func describe(_ error: Error) -> HealthError {
+        let nsError = error as NSError
+        let description = error.localizedDescription
+
+        // A build without the entitlement says so in as many words.
+        if description.localizedCaseInsensitiveContains("entitlement") {
+            return .entitlementMissing
+        }
+        if nsError.domain == "com.apple.healthkit" {
+            switch nsError.code {
+            case 4: return .authorizationDenied
+            case 5: return .authorizationNotDetermined
+            default: break
+            }
+        }
+        return .underlying(description)
     }
 }

@@ -9,6 +9,7 @@ struct ArchiveView: View {
     @Environment(RunStore.self) private var store
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selectedRun: Run?
+    @State private var showsSettings = false
     @Namespace private var transition
 
     /// The cards become one across at the larger text sizes, because a
@@ -65,7 +66,7 @@ struct ArchiveView: View {
                     .foregroundStyle(Theme.ink)
             }
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
+                NavigationLink(isActive: $showsSettings) {
                     SettingsView()
                 } label: {
                     Image(systemName: "info.circle")
@@ -81,6 +82,11 @@ struct ArchiveView: View {
                 .navigationTransition(.zoom(sourceID: run.id, in: transition))
         }
         .task {
+            // -openSettings opens the about screen directly, which is how a
+            // screenshot or a UI check reaches the import screens.
+            if ProcessInfo.processInfo.arguments.contains("-openSettings") {
+                showsSettings = true
+            }
             // -openReceipt opens the first stored run directly, which gives
             // screenshots and UI checks something to look at.
             if ProcessInfo.processInfo.arguments.contains("-openReceipt"),

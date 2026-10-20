@@ -114,32 +114,29 @@ struct ReceiptView: View {
         // The three actions share one glass surface, so they sit together the
         // way a set of controls on a layer of glass does.
         LiquidGlassBar(shape: actionBarShape) {
-            // Side by side when the labels fit. At the larger text sizes they
-            // do not, and a row of buttons that has shrunk to a single letter
-            // each is worse than a column, so the bar becomes a column.
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) {
-                    saveButton
-                    tearButton
-                    shareButton
-                }
-                // A column of three is tall enough to eat the screen at the
-                // larger text sizes, so the secondary actions share a row.
-                VStack(spacing: 8) {
-                    saveButton
+            // At the larger text sizes the three actions do not fit side by
+            // side: a row of three divides its width equally, and "Tear off"
+            // ends up as "Tear…". The primary action gets a row of its own
+            // and the other two share the next.
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    // A row divides its width equally, and at the largest text
+                    // sizes that is not enough for "Tear off". Each action
+                    // gets a row of its own, so no word is ever cut off.
+                    VStack(spacing: 8) {
+                        saveButton
+                        tearButton
+                        shareButton
+                    }
+                } else {
                     HStack(spacing: 8) {
+                        saveButton
                         tearButton
                         shareButton
                     }
                 }
-                VStack(spacing: 8) {
-                    saveButton
-                    tearButton
-                    shareButton
-                }
             }
-            .padding(6)
-        }
+            .padding(6)        }
         .padding(.horizontal, 24)
         .padding(.bottom, 8)
         .accessibilityIdentifier("receipt-actions")
@@ -160,13 +157,13 @@ struct ReceiptView: View {
             : .capsule
     }
 
-    private var saveButton: some View {        Button {
+    private var saveButton: some View {
+        Button {
             isCollected.toggle()
             store.setCollected(isCollected, for: run.id)
             Haptics.shared.success()
         } label: {
-            Label(isCollected ? "Saved" : "Save", systemImage: isCollected ? "checkmark" : "square.and.arrow.down")
-            .lineLimit(1)
+            actionLabel(isCollected ? "Saved" : "Save", systemImage: isCollected ? "checkmark" : "square.and.arrow.down")
         }
         .buttonStyle(ReceiptActionStyle(isPrimary: true))
     }
@@ -175,8 +172,7 @@ struct ReceiptView: View {
         Button {
             tearOff()
         } label: {
-            Label("Tear off", systemImage: "doc.on.doc")
-                .lineLimit(1)
+            actionLabel("Tear off", systemImage: "doc.on.doc")
         }
         .buttonStyle(ReceiptActionStyle(isPrimary: false))
     }
@@ -185,10 +181,27 @@ struct ReceiptView: View {
         Button {
             showShare = true
         } label: {
-            Label("Share", systemImage: "square.and.arrow.up")
-                .lineLimit(1)
+            actionLabel("Share", systemImage: "square.and.arrow.up")
         }
         .buttonStyle(ReceiptActionStyle(isPrimary: false))
+    }
+
+    /// A button's label.
+    ///
+    /// The icon is dropped at the larger text sizes. An icon and a word side
+    /// by side need more room than a word on its own, and a button that has
+    /// been squeezed until it says "Tear…" has stopped saying what it does.
+    ///
+    /// The word may then wrap, rather than being cut off.
+    @ViewBuilder
+    private func actionLabel(_ title: String, systemImage: String) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            Text(title)
+                .multilineTextAlignment(.center)
+        } else {
+            Label(title, systemImage: systemImage)
+                .lineLimit(1)
+        }
     }
     /// Detaches the receipt and returns to the archive.
     ///

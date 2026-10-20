@@ -84,5 +84,16 @@ struct SettingsView: View {
         .navigationDestination(item: $importSource) { source in
             ImportSourceView(source: source)
         }
+        .task {
+            // -openImport=strava|health opens one of the import screens
+            // directly, so a screenshot or a UI check can reach it without
+            // tapping through.
+            if let requested = ProcessInfo.processInfo.arguments
+                .first(where: { $0.hasPrefix("-openImport=") })?
+                .replacingOccurrences(of: "-openImport=", with: ""),
+               let source = ImportViewModel.Source(rawValue: requested) {
+                importSource = source
+            }
+        }
     }
 }

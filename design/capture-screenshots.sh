@@ -15,15 +15,15 @@ BUNDLE="app.milemark.app"
 OUT=".captures"
 DERIVED=".build/screenshots"
 
-if [ ! -d "$DERIVED" ]; then
-  xcodebuild build \
-    -project Milemark.xcodeproj \
-    -scheme Milemark \
-    -sdk iphonesimulator \
-    -destination "platform=iOS Simulator,name=$DEVICE" \
-    -derivedDataPath "$DERIVED" \
-    CODE_SIGNING_ALLOWED=NO > /dev/null
-fi
+# The app is rebuilt every time. A capture of a stale build is a capture of
+# the app as it used to be, which is worse than no capture at all.
+xcodebuild build \
+  -project Milemark.xcodeproj \
+  -scheme Milemark \
+  -sdk iphonesimulator \
+  -destination "platform=iOS Simulator,name=$DEVICE" \
+  -derivedDataPath "$DERIVED" \
+  CODE_SIGNING_ALLOWED=NO > /dev/null
 
 APP="$DERIVED/Build/Products/Debug-iphonesimulator/Milemark.app"
 xcrun simctl boot "$DEVICE" 2>/dev/null || true
@@ -56,6 +56,10 @@ capture "04-receipt-pace" -seedDemoData -openReceipt -graphic=pace
 capture "05-share" -seedDemoData -openReceipt -showShare
 capture "08-photo" -seedDemoData -openReceipt -graphic=photo -demoPhoto -treatment=poster
 capture "06-kept" -seedDemoData -tab=kept
+
+# The same receipt at the largest text size, where the layout has to give
+# way rather than the type shrinking back down.
+capture "09-receipt-large-text" -seedDemoData -openReceipt -dynamicTypeSize=accessibility3
 
 # The live map needs a location to show the route, and the app needs
 # permission to receive it. Without both, the capture is a blank world map

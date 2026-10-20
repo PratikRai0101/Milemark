@@ -79,9 +79,11 @@ final class ImportViewModel {
     var emptyReason: String {
         switch source {
         case .strava:
-            "There are no Strava runs to bring in."
+            return "There are no Strava runs to bring in."
         case .health:
-            "There are no runs in Health to bring in."
+            // HealthKit does not say whether permission was refused, so an
+            // empty list has two possible causes and the copy names both.
+            return "There are no runs in Health to bring in. If you have workouts in the Health app, check that Milemark is allowed to read them under Settings → Health."
         }
     }
 

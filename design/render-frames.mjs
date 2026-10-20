@@ -28,20 +28,27 @@ const frames = [
   { file: '08-photo.png', caption: 'PHOTO — PRINTED THREE WAYS' },
   { file: '05-share.png', caption: 'SHARE — WITH THE ROUTE ENDS TRIMMED' },
   { file: '07-tracking.png', caption: 'RECORDING — A QUIET MAP, A VIVID TRACK' },
-  { file: '06-kept.png', caption: 'KEPT — THE RECEIPTS YOU KEPT' }
+  { file: '06-kept.png', caption: 'KEPT — THE RECEIPTS YOU KEPT' },
+  { file: '09-receipt-large-text.png', caption: 'LARGE TEXT — THE LAYOUT GIVES WAY' }
 ];
 
 const html = `<!doctype html>
 <html><head><meta charset="utf-8"><style>
   body { margin: 0; background: #E9E9E6; font-family: -apple-system, "SF Pro Text", sans-serif; }
-  .frame { display: inline-block; margin: 40px; text-align: center; }
+  /* The frame is a fixed width, so that every image in the readme is the
+     same size however long its caption is. */
+  .frame { display: inline-block; margin: 40px; text-align: center; width: 320px; }
   .device {
     display: inline-block; padding: 10px; border-radius: 54px;
     background: #1B1D21; box-shadow: 0 22px 44px rgba(0,0,0,.20);
   }
   .device img { display: block; width: 300px; border-radius: 44px; }
+  /* The caption is a fixed height as well, so that a caption which wraps to
+     two lines does not make its image taller than the others. */
   .caption {
-    margin-top: 24px; width: 320px; font-size: 11px; line-height: 1.7;
+    margin: 24px auto 0; width: 320px; height: 37.4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; line-height: 1.7;
     letter-spacing: .22em; font-weight: 500; color: #6E716B; text-transform: uppercase;
   }
 </style></head>
@@ -63,9 +70,20 @@ const page = await browser.newPage({ viewport: { width: 1200, height: 1200 }, de
 await page.goto(`file://${htmlPath}`);
 await page.waitForTimeout(500);
 
+// Every frame is captured from the same fixed rectangle, so that the images
+// in the readme are all exactly the same size. An element screenshot varies
+// by a pixel or two depending on how its caption happens to wrap.
+const FRAME_WIDTH = 320;
+const FRAME_HEIGHT = 734;
+
 for (const [index, frame] of frames.entries()) {
   const target = path.join(out, `${String(index + 1).padStart(2, '0')}-${frame.file}`);
-  await page.locator(`#f${index}`).screenshot({ path: target, omitBackground: false });
+  const box = await page.locator(`#f${index}`).boundingBox();
+  await page.screenshot({
+    path: target,
+    fullPage: true,
+    clip: { x: box.x, y: box.y, width: FRAME_WIDTH, height: FRAME_HEIGHT },
+  });
   console.log('  ' + path.relative(root, target));
 }
 

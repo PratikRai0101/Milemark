@@ -41,9 +41,11 @@ jobs:
 
       - name: Test
         run: |
+          # The simulator build is signed, so that the HealthKit entitlement
+          # is applied. An unsigned build has no entitlements, and the
+          # HealthKit check would be testing nothing.
           xcodebuild test \
             -project Milemark.xcodeproj \
             -scheme Milemark \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest' \
-            -derivedDataPath .build \
-            CODE_SIGNING_ALLOWED=NO
+            -derivedDataPath .build
