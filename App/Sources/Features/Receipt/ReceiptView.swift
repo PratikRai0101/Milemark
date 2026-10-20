@@ -458,6 +458,7 @@ struct ReceiptPaper: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel(gripTitle)
         .accessibilityIdentifier("tear-grip")
+        .accessibilityValue("\(Int(tearProgress * 100)) percent pulled")
         .accessibilityHint("Scroll to the end of the receipt, then drag down to collect it")
         .accessibilityAction { onTear() }
         .background {
