@@ -81,6 +81,30 @@ Motion extension: steady paper travel under a fixed slot (~1000 ms), contact/exi
 
 Validation question: Does ready → run → pause → review → print → collect feel coherent, and do the share/privacy choices make sense? Broader platform/native stack and final branding remain undecided.
 
+## Reference relationship
+
+The app was inspired by a running app that prints a receipt for each run. What
+was taken is the idea — a run recorded as a physical printout — and the motion
+of paper feeding out of a machine. The receipt is **not** a copy.
+
+Deliberate differences, made after reviewing the reference closely:
+
+| | The reference | Here |
+|---|---|---|
+| Mark | A pair of running figures | A mile marker with a route running through it |
+| Masthead | The product's own name | The MILEMARK wordmark |
+| Footer | A centred stamp, a slogan, a fine-print line | Left-aligned `LOGGED …` with `PRINTED ON THIS PHONE` opposite |
+| Slogan | "You kept the streak going." | "A route, printed." |
+| Paper edge | A regular zigzag perforation | A torn edge with shallow fibres |
+| Paper source | A black slot | A metal tray rail |
+| Picture chrome | Badge top-left, circular control bottom-right | A caption strip along the bottom edge |
+| Statistics | Three across, one below | Six in a three-by-two grid |
+| Extra | — | Comparison with the last run on the same route |
+
+No artwork, name or copy is taken from the reference app. The generic ideas —
+a receipt is a document, and a document about a run can be printed — are not
+anyone's.
+
 ## Prototype question
 
 Does the route archive → printed, inspectable receipt experience now feel recognizably close to the supplied references, including its movement? Also, does the map/recording branch fit the same product rather than feeling bolted on?

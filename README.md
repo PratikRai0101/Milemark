@@ -115,10 +115,10 @@ request.
 
 ## The receipt
 
-The paper feeds out of a fixed slot and stays in one place while the graphic
-changes inside it. Four treatments are available: the route trace, an ASCII map
-printed as a field of characters, a pace chart per kilometre, and a photograph
-treated like a halftone print.
+The paper comes out of a metal tray rail and stays in one place while the
+graphic changes inside it. Four treatments are available: the route trace, an
+ASCII map printed as a field of characters, a pace chart per kilometre, and a
+photograph treated like a halftone print.
 
 The tear is the interaction people describe. The grip at the end of the paper
 says what to do: it only offers the pull once the receipt has been scrolled to
@@ -130,6 +130,30 @@ without the gesture.
 A receipt also compares itself with the last time the same route was run. The
 comparison is made on the shape of the route rather than on its samples, so two
 laps of the same loop match even when one of them has a lap more.
+
+## The reference, and what is deliberately different
+
+This app was inspired by a running app that prints a receipt for each run. The
+inspiration was the idea — a run recorded as a physical printout — and the
+motion of paper feeding out of a machine.
+
+The receipt here is **not a copy of it**, and the differences are deliberate:
+
+| | The reference | Here |
+|---|---|---|
+| Mark | A pair of running figures | A mile marker with a route running through it |
+| Masthead | The product's own name | The MILEMARK wordmark |
+| Footer | A centred stamp, a slogan and a fine-print line | A left-aligned `LOGGED …` with `PRINTED ON THIS PHONE` opposite it |
+| Slogan | "You kept the streak going." | "A route, printed." |
+| Paper edge | A regular zigzag perforation | A torn edge with shallow fibres |
+| Where the paper comes from | A black slot | A metal tray rail |
+| The picture | A badge top-left and a circular control bottom-right | A caption strip along the bottom edge |
+| Statistics | Three across, one below | Six in a three-by-two grid |
+| Extra | — | A comparison with the last run on the same route |
+
+No artwork, name or copy is taken from the reference app. The ideas taken are
+generic ones: a receipt is a document, and a document about a run can be
+printed.
 
 ## Design
 
