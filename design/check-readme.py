@@ -20,14 +20,15 @@ text = README.read_text()
 images = re.findall(r'<img[^>]*\ssrc="([^"]+)"', text)
 images += re.findall(r'!\[[^\]]*\]\(([^)\s]+)', text)
 
-# Ordinary links, which are never a web address here.
+# Ordinary links in both Markdown and HTML (the demo uses <a href>).
 links = [ref for _, ref in re.findall(r'\[([^\]]*)\]\(([^)]+)\)', text)]
+links += re.findall(r'<a\b[^>]*\shref="([^"]+)"', text)
 
 missing = []
 for ref in images + links:
     if ref.startswith(("http://", "https://", "#", "mailto:")):
         continue
-    if not (ROOT / ref).exists():
+    if not (ROOT / ref.split("#", 1)[0]).exists():
         missing.append(ref)
 
 if missing:

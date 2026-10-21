@@ -117,7 +117,7 @@ something you look at, keep, and hand over.
 
 ## What's built
 
-The full local-first loop is implemented and covered by 62 unit tests and 8 UI tests:
+The full local-first loop is implemented and covered by 62 unit tests and 9 UI tests:
 
 - **Recording** — Core Location, with pause and resume, an auto-pause after
   twelve seconds of stillness, segment breaks that leave a real gap in the
@@ -168,7 +168,7 @@ The full local-first loop is implemented and covered by 62 unit tests and 8 UI t
 - [ ] Strava against live credentials
 
 **Known limits:** verification so far covers the **iPhone 17e simulator on
-iOS 26.5** — 62 unit tests and 8 UI tests, all green on CI. Physical-device
+iOS 26.5** — 62 unit tests and 9 UI tests, passing locally. Physical-device
 haptics, background recording on a locked device, real GPS accuracy, the
 HealthKit permission flow on a device, and the Strava authorisation sheet are
 **unverified**; the last one does not present in this simulator at all. The
@@ -191,7 +191,7 @@ exported to a fixed canvas.
 | Health | HealthKit — read only, never write |
 | Web | AuthenticationServices for the Strava sign-in sheet; the token is kept in the keychain |
 | Storage | JSON in Application Support, plus `UserDefaults` for settings |
-| Tests | XCTest — 62 unit tests, 8 UI tests |
+| Tests | XCTest — 62 unit tests, 9 UI tests |
 | Project | XcodeGen — `project.yml` is the source; the `.xcodeproj` is never committed |
 | CI | GitHub Actions on `macos-15` |
 
@@ -208,17 +208,16 @@ Milemark/
 │   │   │   └── Services/        # RunRecorder, RunStore, RouteGeometry, Strava, HealthKit
 │   │   └── Features/            # Archive, Tracking, Review, Receipt, Share, Collection, Import
 │   ├── Tests/                   # 62 unit tests
-│   ├── UITests/                 # 8 UI tests
+│   ├── UITests/                 # 9 UI tests
 │   └── Resources/               # Info.plist, entitlements, privacy manifest, assets
 ├── Screenshots/
 │   └── frames/                  # The framed images used in this readme
 ├── design/
-│   ├── map-style/               # The figure that explains what a map style is
 │   ├── demo/                    # The demo GIF and its MP4
-│   ├── assets/                  # OpenStreetMap extracts for the sample routes
-│   ├── DIRECTION.md             # The brief, the reference contract, the tokens
-│   ├── CRITIQUE.md              # Two independent design reviews, and what they found
-│   └── ATTRIBUTION.md           # OSM ODbL, and the Unsplash sample photo
+│   ├── assets/                  # OpenStreetMap source extract for the sample routes
+│   ├── DIRECTION.md             # Current native app design constraints
+│   ├── ATTRIBUTION.md           # OSM ODbL, and the bundled Unsplash sample photo
+│   └── *.py / *.sh / *.swift    # Screenshot, demo, icon and route generation tools
 ├── project.yml                   # The Xcode project, in XcodeGen form
 └── .github/workflows/ci.yml      # Build, test, and a readme check
 ```
@@ -289,7 +288,7 @@ it, the people who install it pay nothing either.
 
 ```bash
 python3 design/check-readme.py   # every image and link in this file resolves
-xcodebuild test -project Milemark.xcodeproj -scheme Milemark \
+xcodebuild -project Milemark.xcodeproj -scheme Milemark \
   -destination 'platform=iOS Simulator,name=iPhone 17e' test
 ```
 
@@ -315,15 +314,29 @@ the simulator never draws that either.
 The capture script **fails** if the recorded track is not in the frame, so a
 blank map can never be published as a capture of a working screen.
 
+The image tools require Python 3 and Pillow (`python3 -m pip install Pillow`).
+To regenerate the demo, also install FFmpeg (`brew install ffmpeg`), then run
+`bash design/record-demo.sh "iPhone 17e"`. `design/device.py` supplies the shared
+phone frame; `design/optimise-frames.py` and `design/frame-demo.py` handle the
+screenshot and GIF output respectively.
+
+The icon source is `design/make-icon.swift`:
+
+```bash
+swift design/make-icon.swift App/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+```
+
+Demo-route regeneration and data licensing are documented in
+[design/ATTRIBUTION.md](design/ATTRIBUTION.md). The native SwiftUI app under
+`App/` is the implementation; retired browser prototypes and completed review
+notes remain available in Git history rather than in the working tree.
+
 ## Documentation
 
 | Document | What it covers |
 |---|---|
-| [design/DIRECTION.md](design/DIRECTION.md) | The brief, the reference contract, the content, the tokens and the motion rules |
-| [design/CRITIQUE.md](design/CRITIQUE.md) | Two independent design reviews, what they found, and what was done about it |
-| [design/map-style/](design/map-style/) | The figure that explains what a map style is, and why the basemap's ink and the route's ink are separate |
-| [design/ATTRIBUTION.md](design/ATTRIBUTION.md) | OpenStreetMap ODbL, and the Unsplash sample photograph |
-| [design/PROTOTYPE.md](design/PROTOTYPE.md) | The browser prototype this app was built from, and the two reviews that shaped it |
+| [design/DIRECTION.md](design/DIRECTION.md) | Current native app design, accessibility, privacy and motion constraints |
+| [design/ATTRIBUTION.md](design/ATTRIBUTION.md) | OpenStreetMap source data, demo-route regeneration and the bundled Unsplash photograph |
 
 ## License
 
