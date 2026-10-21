@@ -40,9 +40,9 @@ CHAMFER_BOTTOM = (126, 124, 120)
 BEZEL_COLOUR = (8, 9, 10)
 INDICATOR_COLOUR = (150, 150, 150)
 
-# GitHub's canvas in dark mode. The demo is drawn on it so that the device
-# sits on the page rather than on a white card.
-GITHUB_DARK = (13, 17, 23)
+# GitHub's canvas in dark mode, #0D1116. The demo is drawn on it so that the
+# device sits on the page rather than on a white card.
+GITHUB_DARK = (13, 17, 22)
 
 
 def rounded_mask(size, radius):

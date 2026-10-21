@@ -21,9 +21,11 @@ import device  # noqa: E402
 SCREEN_WIDTH = 234
 
 # The demo is mostly still frames, so a low frame rate and a small palette
-# hold the file down without the motion reading as choppy.
+# hold the file down without the motion reading as choppy. Ninety-six
+# colours is the point where the background survives the palette exactly,
+# so the device blends into the page with no halo.
 FPS = 8
-COLOURS = 64
+COLOURS = 96
 
 
 def frame_device(screen: Image.Image) -> Image.Image:
