@@ -6,6 +6,7 @@ import XCTest
 /// The pauses are deliberate. This test is also what `design/record-demo.sh`
 /// drives while it records the demo in the readme, and a demo that cuts
 /// between beats is not a demo.
+@MainActor
 final class CoreLoopTests: XCTestCase {
     func testTheCoreLoop() {
         let app = XCUIApplication()
