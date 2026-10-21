@@ -50,6 +50,18 @@ from [`design/render-frames.mjs`](design/render-frames.mjs); the capture fails
 if the recording did not record anything, so a blank map cannot slip in. The
 images are pinned to one width so they line up.
 
+<table>
+<tr>
+<td width="33%" valign="top">
+<img src="Screenshots/frames/10-10-settings.png" width="280" alt="The settings screen, with the import section">
+</td>
+<td width="33%" valign="top">
+<img src="Screenshots/frames/11-11-import.png" width="280" alt="The import screen, saying plainly that this build has no Strava keys">
+</td>
+<td width="33%" valign="top"></td>
+</tr>
+</table>
+
 ## Status
 
 **Early development.** The core loop — record a run, review it, print the
