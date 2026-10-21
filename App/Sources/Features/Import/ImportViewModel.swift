@@ -97,6 +97,13 @@ final class ImportViewModel {
             let runs: [Run]
             switch source {
             case .strava:
+                // If the connection failed, the reason is in the service. It
+                // is a better answer than the one the query would give.
+                if case .failed(let reason) = strava.state {
+                    message = reason
+                    candidates = []
+                    return
+                }
                 let stravaActivities = try await strava.activities()
                 runs = stravaActivities.map { StravaRunMapper.makeRun(from: $0) }
             case .health:
