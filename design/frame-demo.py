@@ -18,14 +18,13 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import device  # noqa: E402
 
 # The screen, in pixels at the size the gif is written.
-SCREEN_WIDTH = 234
+SCREEN_WIDTH = 312
 
-# The demo is mostly still frames, so a low frame rate and a small palette
-# hold the file down without the motion reading as choppy. Ninety-six
-# colours is the point where the background survives the palette exactly,
-# so the device blends into the page with no halo.
-FPS = 8
-COLOURS = 96
+# GIF delays are measured in hundredths of a second: 25 fps gives an exact
+# 40 ms cadence, unlike a 30 fps export that alternates 30/40 ms delays.
+# Keep native transitions rather than dropping them to the old 8 fps.
+FPS = 25
+COLOURS = 128
 
 
 def make_framer():
@@ -82,7 +81,7 @@ def main() -> int:
                 "ffmpeg", "-y", "-v", "error", "-framerate", str(FPS),
                 "-i", str(frames / "%05d.png"),
                 "-vf",
-                f"split[a][b];[a]palettegen=max_colors={COLOURS}[p];[b][p]paletteuse=dither=bayer:bayer_scale=4",
+                f"split[a][b];[a]palettegen=max_colors={COLOURS}:reserve_transparent=0[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle",
                 "-loop", "0", str(out),
             ],
             check=True,

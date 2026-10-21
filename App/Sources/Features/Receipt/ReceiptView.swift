@@ -689,7 +689,10 @@ struct ReceiptPaper: View {
     }
 
     private var tearGesture: some Gesture {
-        DragGesture(minimumDistance: 4)
+        // The paper moves during the pull. Measure in a stationary space so
+        // its own offset cannot subtract from the finger's travel, causing
+        // feedback jitter or a completed pull to spring back unexpectedly.
+        DragGesture(minimumDistance: 4, coordinateSpace: .global)
             .onChanged { value in
                 // The tear is armed when the pull starts, at the end of the
                 // paper. The scroll view bounces a little at the end of its

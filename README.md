@@ -28,8 +28,8 @@
 </p>
 
 <p align="center">
-  <a href="design/demo/milemark-demo.mp4"><strong>Watch the 28-second demo</strong></a><br />
-  <sub>Native iOS · One continuous take · Normal speed · MP4 under 200 KB</sub>
+  <a href="design/demo/milemark-demo.mp4"><strong>Watch the 30-second demo</strong></a><br />
+  <sub>Native iOS · One continuous take · Normal speed · 60 fps MP4</sub>
 </p>
 
 Open a run, watch the receipt feed out of the tray, then pull the paper off. The
@@ -309,7 +309,9 @@ indistinguishable on a page of greys and one third of the size.
 
 The demo is drawn the same way, on GitHub's dark canvas, so that it sits on
 the page rather than on a white card. Its Dynamic Island is drawn too, since
-the simulator never draws that either.
+the simulator never draws that either. The MP4 preserves motion at 60 fps;
+the inline GIF uses 25 fps. Both keep the same real-time pacing, including
+still holds to read the archive, receipt and footer.
 
 The capture script **fails** if the recorded track is not in the frame, so a
 blank map can never be published as a capture of a working screen.
@@ -318,7 +320,13 @@ The image tools require Python 3 and Pillow (`python3 -m pip install Pillow`).
 To regenerate the demo, also install FFmpeg (`brew install ffmpeg`), then run
 `bash design/record-demo.sh "iPhone 17e"`. `design/device.py` supplies the shared
 phone frame; `design/optimise-frames.py` and `design/frame-demo.py` handle the
-screenshot and GIF output respectively.
+screenshot and GIF output respectively. The recording wrapper calls
+`design/record-demo.py`, which builds before capture and trims only at the
+UI test's start/end cues, rather than guessing startup offsets. It preserves
+the simulator's presentation timestamps across still holds and validates the
+reading time, transition frames, export cadence and matching archive bookends
+before replacing either published asset. Raw footage, timing and logs stay in
+ignored `.captures/demo/` for inspection.
 
 The icon source is `design/make-icon.swift`:
 
