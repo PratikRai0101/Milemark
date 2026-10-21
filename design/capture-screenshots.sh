@@ -10,7 +10,10 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-DEVICE="${1:-iPhone 17 Pro}"
+# The device the published screens were taken on. The default matters: a
+# capture on a different model is a different size, and the readme pins every
+# image to the same width.
+DEVICE="${1:-iPhone 17e}"
 BUNDLE="app.milemark.app"
 OUT=".captures"
 DERIVED=".build/screenshots"

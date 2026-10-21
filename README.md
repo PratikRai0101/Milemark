@@ -10,6 +10,12 @@ with the ends of the route trimmed.
 
 ## Screens
 
+Every screen below is the real app running in the **iPhone 17e simulator**,
+captured from the simulator itself. The system furniture in them — the
+HealthKit sheet, the tab bar, the SF Symbols, the Liquid Glass — is drawn by
+iOS 26.5, so it is Apple's own, but nothing here has been photographed on a
+physical iPhone.
+
 <table>
 <tr>
 <td width="33%" valign="top">
@@ -79,7 +85,7 @@ surfaces are still provisional.
 | Photo print treatment | Working, in three ways: halftone, dither and poster |
 | Collection of kept receipts | Working |
 | Comparison with the last run on the same route | Working, by pace |
-| Haptics | Working |
+| Haptics | Implemented, and not yet felt — the simulator cannot make them |
 | Liquid Glass action bar | On iOS 26 and later; a matched flat bar elsewhere |
 | Dynamic Type | Working, from the smallest size to the largest, with the layouts reflowing rather than shrinking |
 | Strava import | Implemented: OAuth, token refresh, activity import. Needs a client ID and secret to connect |
