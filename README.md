@@ -23,18 +23,25 @@
 
 <p align="center">
   <a href="design/demo/milemark-demo.mp4">
-    <img src="design/demo/milemark-demo.gif" width="260" alt="Milemark in the simulator: the archive of route silhouettes, a run opened, the receipt printing out of the tray, and the paper being torn off" />
+    <img src="design/demo/milemark-demo.gif" width="260" alt="Milemark feature tour: route, ASCII, pace chart, photo treatments, sharing, large text, paper tear, kept receipts, settings, import and live-map recording" />
   </a>
 </p>
 
 <p align="center">
-  <a href="design/demo/milemark-demo.mp4"><strong>Watch the 30-second demo</strong></a><br />
-  <sub>Native iOS · One continuous take · Normal speed · 60 fps MP4</sub>
+  <a href="design/demo/milemark-demo.mp4"><strong>Watch the 2:13 feature tour</strong></a><br />
+  <sub>Every screenshot feature · One continuous take · Normal speed · 60 fps MP4</sub>
 </p>
 
-Open a run, watch the receipt feed out of the tray, then pull the paper off. The
-grip at the bottom of the sheet only offers the pull once the receipt has been
-scrolled to the end, because a pull in the middle of a long receipt is a
+The tour opens a run and prints its route, switches to ASCII, scrubs the pace
+chart, and prints a photo as halftone, dither and poster. It then shows the
+share/privacy preview, large-text layout, paper tear, kept receipts, settings,
+Strava connection screen, live-map recording with pause/resume, and run review.
+Each feature gets a still hold rather than an immediate cut to the next one.
+The map uses simulated GPS and the photo is a bundled sample; no live Strava
+login or import is claimed.
+
+The grip at the bottom of the sheet only offers the pull once the receipt has
+been scrolled to the end, because a pull in the middle of a long receipt is a
 scroll.
 
 Every screenshot below is a real capture from the **iPhone 17e simulator on
@@ -324,9 +331,14 @@ screenshot and GIF output respectively. The recording wrapper calls
 `design/record-demo.py`, which builds before capture and trims only at the
 UI test's start/end cues, rather than guessing startup offsets. It preserves
 the simulator's presentation timestamps across still holds and validates the
-reading time, transition frames, export cadence and matching archive bookends
-before replacing either published asset. Raw footage, timing and logs stay in
-ignored `.captures/demo/` for inspection.
+reading time, feature coverage, visible map track, transition frames, export
+cadence and matching archive bookends before replacing either published asset.
+The recording-only UI-test branch is enabled with `TEST_RUNNER_MILEMARK_SHOWCASE=1`;
+normal test runs retain the short core-loop regression. The host supplies a
+simulated geographic route and temporarily changes the system text size for
+the accessibility scene, restoring it afterwards. Strava build credentials are
+placeholders used only to show the connection screen. Raw footage, timing and
+logs stay in ignored `.captures/demo/` for inspection.
 
 The icon source is `design/make-icon.swift`:
 

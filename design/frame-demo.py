@@ -18,7 +18,9 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import device  # noqa: E402
 
 # The screen, in pixels at the size the gif is written.
-SCREEN_WIDTH = 312
+# Sized for the README's 260 px preview; the full-resolution MP4 remains
+# available for inspecting details without downloading an oversized GIF.
+SCREEN_WIDTH = 260
 
 # GIF delays are measured in hundredths of a second: 25 fps gives an exact
 # 40 ms cadence, unlike a 30 fps export that alternates 30/40 ms delays.

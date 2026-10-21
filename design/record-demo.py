@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record the real core-loop UI test, preserving native motion and reading holds.
+"""Record every screenshot feature in one native take with readable holds.
 
 Build before capture; trim only at timestamped test cues. Raw video and logs
 stay in ignored .captures/demo/ for inspection. Existing published media is
@@ -21,7 +21,14 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 DEVICE = sys.argv[1] if len(sys.argv) > 1 else "iPhone 17e"
 WORK = ROOT / ".captures" / "demo"
 DERIVED = ROOT / ".build" / "demo"
-BEATS = ["BEGIN", "OPEN", "RECEIPT", "SCROLL", "FOOTER", "TEAR", "RETURN", "END"]
+BEATS = ["BEGIN", "OPEN", "RECEIPT", "ASCII", "PACE", "SCRUB", "PHOTO", "DITHER",
+         "POSTER", "SHARE", "LARGE_TEXT", "NORMAL_TEXT", "SCROLL", "FOOTER", "TEAR",
+         "RETURN", "KEPT", "SETTINGS", "IMPORT", "MAP_READY", "TRACKING", "PAUSED",
+         "RESUMED", "REVIEW", "FINAL", "END"]
+HOLDS = {"BEGIN": 3, "RECEIPT": 3, "ASCII": 3, "PACE": 2, "PHOTO": 3, "DITHER": 2,
+         "POSTER": 3, "SHARE": 4, "LARGE_TEXT": 5, "NORMAL_TEXT": 2, "FOOTER": 2,
+         "KEPT": 3, "SETTINGS": 3, "IMPORT": 3, "MAP_READY": 3, "TRACKING": 10,
+         "PAUSED": 2, "RESUMED": 2, "REVIEW": 3, "FINAL": 3}
 
 
 def run(*args, **kwargs):
@@ -40,14 +47,27 @@ def main():
     run("xcodegen", "generate")
     run("xcrun", "simctl", "bootstatus", DEVICE, "-b")
     run("xcrun", "simctl", "ui", DEVICE, "appearance", "light")
+    original_size = subprocess.check_output([
+        "xcrun", "simctl", "ui", DEVICE, "content_size"], text=True).strip()
     base = ["xcodebuild", "-project", "Milemark.xcodeproj", "-scheme", "Milemark",
             "-destination", f"platform=iOS Simulator,name={DEVICE}",
-            "-derivedDataPath", str(DERIVED), "-parallel-testing-enabled", "NO"]
+            "-derivedDataPath", str(DERIVED), "-parallel-testing-enabled", "NO",
+            "STRAVA_CLIENT_ID=000000", "STRAVA_CLIENT_SECRET=placeholder"]
     print("Building the app and test runner before recording…", flush=True)
     with (WORK / "build.log").open("w") as log:
         subprocess.run(base + ["build-for-testing"], cwd=ROOT, stdout=log,
                        stderr=subprocess.STDOUT, check=True, timeout=600)
 
+    run("xcrun", "simctl", "install", DEVICE,
+        str(DERIVED / "Build/Products/Debug-iphonesimulator/Milemark.app"))
+    run("xcrun", "simctl", "privacy", DEVICE, "grant", "location", "app.milemark.app")
+    run("xcrun", "simctl", "ui", DEVICE, "content_size", "large")
+    # Drive Core Location itself, not a fake tracking view. This fictional
+    # workout follows the same mapped path used by the screenshot fixtures.
+    metadata = json.loads((ROOT / "design/assets/kallang-map.json").read_text())
+    coordinates = metadata["sampleRunningPath"]["geojson"]["coordinates"]
+    run("xcrun", "simctl", "location", DEVICE, "start", "--speed=5", "--interval=1",
+        *[f"{lat},{lon}" for lon, lat in coordinates])
     run("xcrun", "simctl", "status_bar", DEVICE, "override", "--time", "9:41",
         "--dataNetwork", "wifi", "--wifiMode", "active", "--wifiBars", "3",
         "--batteryState", "charged", "--batteryLevel", "100")
@@ -74,9 +94,37 @@ def main():
             raise RuntimeError("Simulator recorder did not start within 30 seconds")
         print("Recording one continuous take…", flush=True)
         with (WORK / "test.log").open("w") as log:
-            subprocess.run(base + ["test-without-building",
+            test = subprocess.Popen(base + ["test-without-building",
                 "-only-testing:MilemarkUITests/CoreLoopTests/testTheCoreLoop"],
-                cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=180)
+                cwd=ROOT, stdout=log, stderr=subprocess.STDOUT,
+                env={**os.environ, "TEST_RUNNER_MILEMARK_SHOWCASE": "1",
+                     "TEST_RUNNER_NSUnbufferedIO": "YES"})
+            deadline = time.monotonic() + 300
+            enlarged = restored = captured_track = False
+            try:
+                while test.poll() is None:
+                    if time.monotonic() > deadline:
+                        raise RuntimeError("Showcase test timed out")
+                    text = (WORK / "test.log").read_text()
+                    if "MILEMARK_DEMO_LARGE_TEXT " in text and not enlarged:
+                        run("xcrun", "simctl", "ui", DEVICE, "content_size", "accessibility-extra-large")
+                        enlarged = True
+                    if "MILEMARK_DEMO_NORMAL_TEXT " in text and not restored:
+                        run("xcrun", "simctl", "ui", DEVICE, "content_size", "large")
+                        restored = True
+                    tracking = re.search(r"MILEMARK_DEMO_TRACKING (\d+\.\d+)", text)
+                    if tracking and time.time() - float(tracking[1]) >= 8 and not captured_track:
+                        run("xcrun", "simctl", "io", DEVICE, "screenshot", str(WORK / "tracking.png"))
+                        captured_track = True
+                    time.sleep(0.15)
+                if test.returncode != 0:
+                    raise RuntimeError("Showcase UI test failed; see test.log")
+                if not (enlarged and restored and captured_track):
+                    raise RuntimeError("Simulator showcase cues were not handled in real time")
+            finally:
+                if test.poll() is None:
+                    test.terminate()
+                    test.wait(timeout=30)
     finally:
         if recorder.poll() is None:
             recorder.send_signal(signal.SIGINT)
@@ -88,6 +136,8 @@ def main():
                 raise RuntimeError("Simulator recorder could not finalize the video")
         recorder.stderr.close()
         run("xcrun", "simctl", "status_bar", DEVICE, "clear")
+        run("xcrun", "simctl", "ui", DEVICE, "content_size", original_size)
+        run("xcrun", "simctl", "location", DEVICE, "clear")
     if recorder.returncode != 0:
         raise RuntimeError(f"Simulator recording failed: {recorder.returncode}")
 
@@ -98,12 +148,19 @@ def main():
     beats = {name: float(timestamp) for name, timestamp in matches}
     start = beats["BEGIN"] - recording_epoch
     duration = beats["END"] - beats["BEGIN"]
-    if start < 0 or not 24 <= duration <= 36:
+    if start < 0 or not 80 <= duration <= 210:
         raise RuntimeError(f"Unexpected showcase timing: start={start:.2f}, duration={duration:.2f}")
-    for begin, end, minimum in [("BEGIN", "OPEN", 3), ("RECEIPT", "SCROLL", 8),
-                                 ("FOOTER", "TEAR", 4), ("RETURN", "END", 4)]:
-        if beats[end] - beats[begin] < minimum:
-            raise RuntimeError(f"The {begin.lower()} reading hold was shortened")
+    for beat, minimum in HOLDS.items():
+        following = BEATS[BEATS.index(beat) + 1]
+        if beats[following] - beats[beat] < minimum:
+            raise RuntimeError(f"The {beat.lower()} reading hold was shortened")
+    with Image.open(WORK / "tracking.png") as tracking:
+        # Ignore the controls: the map itself must contain the orange route.
+        map_pixels = tracking.convert("RGB").crop((100, 400, tracking.width - 100, 1500))
+        signal_pixels = sum(r > 140 and r > g * 1.5 and r > b * 1.8
+                            for r, g, b in map_pixels.getdata())
+    if signal_pixels < 30:
+        raise RuntimeError("Tracking map has no visible route; keeping previous media")
 
     # simctl's H.264 stream can have duplicate presentation timestamps and
     # misleading decode timestamps after a still hold. FFmpeg's default
