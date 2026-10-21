@@ -134,3 +134,61 @@ final class OAuthTokenTests: XCTestCase {
         XCTAssertTrue(token.isExpired())
     }
 }
+
+/// An error the reader can act on.
+final class ImportErrorTests: XCTestCase {
+    /// A Swift error that does not say anything falls back to a generic
+    /// message with the type's name and a number in it. The reader is shown
+    /// the message instead.
+    func testTheStravaErrorsSayWhatTheyMean() {
+        XCTAssertEqual(StravaError.cancelled.errorDescription, "The authorisation was cancelled.")
+        XCTAssertEqual(StravaError.notConnected.errorDescription, "Connect to Strava first.")
+        XCTAssertEqual(
+            StravaError.server(status: 401, message: "Bad Request").errorDescription,
+            "Bad Request"
+        )
+        XCTAssertNotNil(StravaError.notConfigured.errorDescription)
+    }
+
+    func testTheHealthErrorsSayWhatTheyMean() {
+        XCTAssertEqual(
+            HealthError.authorizationNotDetermined.errorDescription,
+            "Milemark has not been allowed to read Health yet."
+        )
+        XCTAssertEqual(
+            HealthError.entitlementMissing.errorDescription,
+            "This build of Milemark cannot read Health."
+        )
+    }
+
+    /// The description is what the reader sees, so it must never be the
+    /// generic fallback.
+    func testNoErrorShowsTheGenericFallback() {
+        let errors: [LocalizedError] = [
+            StravaError.cancelled,
+            StravaError.notConnected,
+            StravaError.notConfigured,
+            StravaError.badResponse,
+            StravaError.couldNotStoreToken,
+            StravaError.server(status: 500, message: nil),
+            HealthError.unavailable,
+            HealthError.authorizationNotDetermined,
+            HealthError.authorizationDenied,
+            HealthError.entitlementMissing,
+        ]
+        for error in errors {
+            let description = error.errorDescription ?? ""
+            XCTAssertFalse(description.isEmpty, "\(error) has no description.")
+            // The generic fallback is the system's own wording, with the
+            // type's name and a number in it.
+            XCTAssertFalse(
+                description.contains("couldn\u{2019}t be completed"),
+                "\(error) would show the generic fallback: \(description)"
+            )
+            XCTAssertFalse(
+                description.contains("Milemark."),
+                "\(error) would show the generic fallback: \(description)"
+            )
+        }
+    }
+}
