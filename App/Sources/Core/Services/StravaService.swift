@@ -166,6 +166,14 @@ public final class StravaService {
 
     private static func describe(_ error: Error) -> String {
         if let stravaError = error as? StravaError { return stravaError.message }
+        if let authError = error as? ASWebAuthenticationSessionError {
+            switch authError.code {
+            case .canceledLogin: return "The authorisation was cancelled."
+            case .presentationContextNotProvided: return "The authorisation sheet could not be placed on screen."
+            case .presentationContextInvalid: return "The authorisation sheet could not be placed on screen."
+            @unknown default: return "The authorisation sheet could not be opened."
+            }
+        }
         return error.localizedDescription
     }
 }
@@ -195,6 +203,13 @@ enum StravaError: LocalizedError {
             message ?? "Strava returned an error (\(status))."
         }
     }
+
+    /// The message the reader sees.
+    ///
+    /// Without this, a Swift error falls back to a generic "the operation
+    /// couldn't be completed" with the type's name and a number in it, which
+    /// tells nobody anything.
+    var errorDescription: String? { message }
 }
 
 /// The system sheet that asks Strava for permission.

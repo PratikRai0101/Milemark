@@ -243,6 +243,12 @@ enum HealthError: LocalizedError, Equatable {
         }
     }
 
+    /// The message the reader sees.
+    ///
+    /// Without this, a Swift error falls back to a generic "the operation
+    /// couldn't be completed" with the type's name and a number in it.
+    var errorDescription: String? { message }
+
     /// Turns a HealthKit error into one of ours.
     ///
     /// The ones that matter are the ones the reader can act on. HealthKit
