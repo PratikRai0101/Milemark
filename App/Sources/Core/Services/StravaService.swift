@@ -80,7 +80,6 @@ public final class StravaService {
             state = .failed(Self.describe(error))
         }
     }
-
     /// Exchanges an authorisation code for a token.
     private func exchange(code: String) async throws -> OAuthToken {
         var request = URLRequest(url: URL(string: "https://www.strava.com/oauth/token")!)
@@ -209,10 +208,20 @@ private final class StravaAuthorisationSession: NSObject, ASWebAuthenticationPre
     private var continuation: CheckedContinuation<String, Error>?
     private weak var presenter: UIViewController?
 
+    /// The sheet in progress.
+    ///
+    /// The sheet has to be kept alive for as long as it is running. A
+    /// continuation does not keep the object that owns it alive: the closure
+    /// that captures it is released the moment it returns, so without this
+    /// the sheet would be gone before it had been asked where to put itself.
+    nonisolated(unsafe) private static var current: StravaAuthorisationSession?
+
     /// Opens the sheet and waits for Strava to send the reader back.
     static func authorise(url: URL, nonce: String, presenter: UIViewController) async throws -> String {
         let sheet = StravaAuthorisationSession()
         sheet.presenter = presenter
+        current = sheet
+        defer { current = nil }
         return try await sheet.run(url: url, nonce: nonce)
     }
 
@@ -262,6 +271,18 @@ private final class StravaAuthorisationSession: NSObject, ASWebAuthenticationPre
     }
 
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        presenter?.view.window ?? ASPresentationAnchor()
+        // The sheet has to be placed in a window that is on screen. A view
+        // controller that is in the hierarchy always has one; a newly made
+        // window has none, and the session refuses to start in it.
+        if let window = presenter?.view.window {
+            return window
+        }
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let window = scenes
+            .flatMap(\.windows)
+            .first { $0.isKeyWindow }
+            ?? scenes.first?.windows.first
+        if let window { return window }
+        return ASPresentationAnchor()
     }
 }
