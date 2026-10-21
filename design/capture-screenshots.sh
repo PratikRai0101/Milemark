@@ -17,12 +17,19 @@ DERIVED=".build/screenshots"
 
 # The app is rebuilt every time. A capture of a stale build is a capture of
 # the app as it used to be, which is worse than no capture at all.
+#
+# The Strava keys are placeholders. They are only here so that the import
+# screen in the readme shows the app as it works rather than as it is
+# without a Strava application; the screen is the same either way, and no
+# real key is ever in the repository.
 xcodebuild build \
   -project Milemark.xcodeproj \
   -scheme Milemark \
   -sdk iphonesimulator \
   -destination "platform=iOS Simulator,name=$DEVICE" \
   -derivedDataPath "$DERIVED" \
+  STRAVA_CLIENT_ID=000000 \
+  STRAVA_CLIENT_SECRET=placeholder \
   CODE_SIGNING_ALLOWED=NO > /dev/null
 
 APP="$DERIVED/Build/Products/Debug-iphonesimulator/Milemark.app"
@@ -60,6 +67,10 @@ capture "06-kept" -seedDemoData -tab=kept
 # The same receipt at the largest text size, where the layout has to give
 # way rather than the type shrinking back down.
 capture "09-receipt-large-text" -seedDemoData -openReceipt -dynamicTypeSize=accessibility3
+
+# The import screens, which are new and have their own states.
+capture "10-settings" -seedDemoData -openSettings
+capture "11-import" -seedDemoData -openSettings -openImport=strava
 
 # The live map needs a location to show the route, and the app needs
 # permission to receive it. Without both, the capture is a blank world map

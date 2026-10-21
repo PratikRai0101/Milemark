@@ -29,7 +29,9 @@ const frames = [
   { file: '05-share.png', caption: 'SHARE — WITH THE ROUTE ENDS TRIMMED' },
   { file: '07-tracking.png', caption: 'RECORDING — A QUIET MAP, A VIVID TRACK' },
   { file: '06-kept.png', caption: 'KEPT — THE RECEIPTS YOU KEPT' },
-  { file: '09-receipt-large-text.png', caption: 'LARGE TEXT — THE LAYOUT GIVES WAY' }
+  { file: '09-receipt-large-text.png', caption: 'LARGE TEXT — THE LAYOUT GIVES WAY' },
+  { file: '10-settings.png', caption: 'SETTINGS — WHERE THE IMPORT LIVES' },
+  { file: '11-import.png', caption: 'IMPORT — BRINGING IN RUNS FROM ELSEWHERE' }
 ];
 
 const html = `<!doctype html>
