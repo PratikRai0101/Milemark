@@ -1,397 +1,317 @@
-# Milemark
+<div align="center">
+  <img src="App/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png" width="96" alt="Milemark — a mile marker cut into a slab of paper" />
 
-A running app for iPhone that turns every route into a printed receipt.
+  <h1>Milemark</h1>
 
-Milemark records a run on a real map, then prints it: a thermal-paper receipt
-with your route drawn on it, your distance, pace and time, and an optional note.
-Runs are kept in an archive of route silhouettes rather than a dashboard of
-numbers, and finished receipts can be collected into a collection or shared
-with the ends of the route trimmed.
+  <p><strong>A running app that prints your route as a receipt.</strong><br />
+  Thermal paper, a drawn route, your distance and pace — and then you tear it off.</p>
+
+  <p>
+    <a href="#requirements"><img src="https://img.shields.io/badge/iOS-18%2B-24577E?logo=apple&logoColor=white" alt="iOS 18 or later" /></a>
+    <a href="#tech-stack"><img src="https://img.shields.io/badge/Swift-6.0-182C3B?logo=swift&logoColor=white" alt="Swift 6" /></a>
+    <a href="#tech-stack"><img src="https://img.shields.io/badge/SwiftUI-182C3B?logo=swift&logoColor=white" alt="SwiftUI" /></a>
+    <a href="#tech-stack"><img src="https://img.shields.io/badge/MapKit-466D83?logo=apple&logoColor=white" alt="MapKit" /></a>
+    <a href="#whats-built"><img src="https://img.shields.io/badge/status-early%20development-628BA2" alt="Status: early development" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4B606B.svg" alt="MIT License" /></a>
+  </p>
+</div>
+
+> [!IMPORTANT]
+> **Milemark is pre-release.** The core loop — record a run, review it, print the receipt, keep it, share it — is implemented and runs on a simulator. **Nothing has been tested on a physical device**, nothing is on the App Store, and `MILEMARK` is a working title rather than a settled brand.
+
+## See it in use
+
+<p align="center">
+  <a href="design/demo/milemark-demo.mp4">
+    <img src="design/demo/milemark-demo.gif" width="260" alt="Milemark in the simulator: the archive of route silhouettes, a run opened, the receipt printing out of the tray, and the paper being torn off" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="design/demo/milemark-demo.mp4"><strong>Watch the 38-second demo</strong></a><br />
+  <sub>One continuous take · Normal speed · MP4 under 200 KB</sub>
+</p>
+
+Open a run, watch the receipt feed out of the tray, then pull the paper off. The
+grip at the bottom of the sheet only offers the pull once the receipt has been
+scrolled to the end, because a pull in the middle of a long receipt is a
+scroll.
+
+Every screenshot below is a real capture from the **iPhone 17e simulator on
+iOS 26.5**. The device frame is drawn around the capture; the app pixels
+inside it are untouched. See [the note on verification](#known-limits).
+
+## Why Milemark?
+
+Most running apps are dashboards: a map, a number, a ring that fills, a chart
+that trends. Milemark makes an **object** instead. A run becomes a receipt —
+something you look at, keep, and hand over.
+
+- **The receipt is the product.** A run is not a set of metrics to be
+  refreshed. It is a printed thing with a shape, a number, a date and your
+  handwriting on it. The route is drawn as a line, not as a polyline on a
+  basemap.
+- **The archive is a set of shapes.** Every run is one silhouette on a card.
+  You recognise the run by its outline the way you recognise a handwriting
+  sample, not by reading a distance off a list.
+- **The tear is the interaction.** The paper follows your finger and comes
+  away. Every other running app's primary gesture is a button.
+- **No account, no server, no feed.** Runs live in a JSON file on the phone.
+  There is nothing to sign up for and nothing to upload. The only thing this
+  app talks to is Apple, and — if you ask it to — Strava.
+- **Quiet by default.** The basemap is held back to a whisper, the route is
+  the only saturated thing on screen, and there are no points of interest on
+  the map. A pin for a bubble tea shop is not a run.
 
 ## Screens
 
-Every screen below is the real app running in the **iPhone 17e simulator**,
-captured from the simulator itself. The system furniture in them — the
-HealthKit sheet, the tab bar, the SF Symbols, the Liquid Glass — is drawn by
-iOS 26.5, so it is Apple's own, but nothing here has been photographed on a
-physical iPhone.
+<p align="center">
+  <img src="Screenshots/frames/02-02-receipt-route.png" width="300" alt="The printed receipt: a route drawn on thermal paper, with distance, pace, heart rate, duration, elevation and a comparison with the last run on the same route" />
+  <br />
+  <sub><strong>The receipt</strong> — the paper comes out of a metal tray, the route is drawn on it, and the numbers are set in a monospaced face beneath.</sub>
+</p>
 
 <table>
-<tr>
-<td width="33%" valign="top">
-<img src="Screenshots/frames/01-01-archive.png" width="280" alt="The route archive: every run as its own shape, with its date and distance">
-</td>
-<td width="33%" valign="top">
-<img src="Screenshots/frames/02-02-receipt-route.png" width="280" alt="The printed receipt: a route drawn on paper, with distance, pace, time and elevation">
-</td>
-<td width="33%" valign="top">
-<img src="Screenshots/frames/03-03-receipt-ascii.png" width="280" alt="The same route printed as a field of the letters R, U and N">
-</td>
-</tr>
-<tr>
-<td width="33%" valign="top">
-<img src="Screenshots/frames/04-04-receipt-pace.png" width="280" alt="A chart of pace for each kilometre of the run">
-</td>
-<td width="33%" valign="top">
-<img src="Screenshots/frames/05-08-photo.png" width="280" alt="A photograph printed as a hard two-tone poster of dots">
-</td>
-<td width="33%" valign="top">
-<img src="Screenshots/frames/06-05-share.png" width="280" alt="The share preview, with the route ends trimmed and the note included">
-</td>
-</tr>
-<tr>
-<td width="33%" valign="top">
-<img src="Screenshots/frames/07-07-tracking.png" width="280" alt="Recording a run: a quiet map with a bright orange track">
-</td>
-<td width="33%" valign="top">
-<img src="Screenshots/frames/08-06-kept.png" width="280" alt="The collection of kept receipts">
-</td>
-<td width="33%" valign="top"></td>
-</tr>
+  <tr>
+    <td width="50%">
+      <img width="280" src="Screenshots/frames/01-01-archive.png" alt="The archive: nine runs, each as its own route silhouette with a date and a distance" />
+      <br /><sub><strong>Archive</strong> — every route as its own shape, with its date and distance.</sub>
+    </td>
+    <td width="50%">
+      <img width="280" src="Screenshots/frames/03-03-receipt-ascii.png" alt="The same route printed as a field of the letters R, U and N" />
+      <br /><sub><strong>ASCII</strong> — the same route, printed row by row as a field of characters.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img width="280" src="Screenshots/frames/04-04-receipt-pace.png" alt="A chart of pace for each kilometre of the run, with the fastest kilometre marked" />
+      <br /><sub><strong>Pace</strong> — a chart per kilometre that you can scrub, with the fastest one marked.</sub>
+    </td>
+    <td width="50%">
+      <img width="280" src="Screenshots/frames/05-08-photo.png" alt="A photograph printed as a hard two-tone poster of dots" />
+      <br /><sub><strong>Photo</strong> — a photograph printed three ways: halftone, ordered dither, poster.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img width="280" src="Screenshots/frames/07-07-tracking.png" alt="The recording screen: a quiet muted map with a vivid orange track and the distance counting up" />
+      <br /><sub><strong>Recording</strong> — a quiet map, a vivid track, and the paper that will come out of it.</sub>
+    </td>
+    <td width="50%">
+      <img width="280" src="Screenshots/frames/06-05-share.png" alt="The share preview: the route with its first and last fifteen per cent trimmed, and the privacy copy beneath it" />
+      <br /><sub><strong>Share</strong> — the image that leaves the phone, with the route's ends trimmed.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img width="280" src="Screenshots/frames/08-06-kept.png" alt="The collection of kept receipts" />
+      <br /><sub><strong>Kept</strong> — the receipts you decided to keep.</sub>
+    </td>
+    <td width="50%">
+      <img width="280" src="Screenshots/frames/09-09-receipt-large-text.png" alt="The same receipt at the largest text size, with the title wrapped, the statistics in two columns and each action on a row of its own" />
+      <br /><sub><strong>Large text</strong> — the same receipt at <code>accessibility3</code>. The layout gives way rather than the type shrinking back down.</sub>
+    </td>
+  </tr>
 </table>
 
-These are the real app running in the simulator. The captures come from
-[`design/capture-screenshots.sh`](design/capture-screenshots.sh) and the frames
-from [`design/render-frames.mjs`](design/render-frames.mjs); the capture fails
-if the recording did not record anything, so a blank map cannot slip in. The
-images are pinned to one width so they line up.
+<p align="center">
+  <img src="Screenshots/frames/11-11-import.png" width="300" alt="The Strava import screen: a Connect to Strava button, and the note that your password is never seen by the app" />
+  <br />
+  <sub><strong>Import</strong> — bring in runs recorded by another app. The browser does not open on its own; the app asks first.</sub>
+</p>
 
-<table>
-<tr>
-<td width="33%" valign="top">
-<img src="Screenshots/frames/10-10-settings.png" width="280" alt="The settings screen, with the import section">
-</td>
-<td width="33%" valign="top">
-<img src="Screenshots/frames/11-11-import.png" width="280" alt="The import screen, saying plainly that this build has no Strava keys">
-</td>
-<td width="33%" valign="top"></td>
-</tr>
-</table>
+## What's built
 
-## Status
+The full local-first loop is implemented and covered by 62 unit tests and 8 UI tests:
 
-**Early development.** The core loop — record a run, review it, print the
-receipt, keep it, share it — is implemented and runs on a simulator. Several
-surfaces are still provisional.
+- **Recording** — Core Location, with pause and resume, an auto-pause after
+  twelve seconds of stillness, segment breaks that leave a real gap in the
+  track, and a clock worked out from the dates so a run keeps recording with
+  the phone locked
+- **Live map** — MapKit with a flat, muted basemap, no points of interest and
+  no traffic; the route is inked over it with a casing, the way a road is
+  printed, and the marks on it are drawn by the app rather than by the system
+- **Archive** — every run as its own route silhouette, with its date and
+  distance, and a card that becomes one across at the larger text sizes
+- **Receipt** — four treatments on the same paper: the route trace, an ASCII
+  map, a per-kilometre pace chart you can scrub, and a photograph printed
+  three ways
+- **Tear** — the paper follows the finger, springs back if the pull is short
+  of the threshold, and comes away if it is not; a button does the same thing
+  without the gesture
+- **Review** — name the run and add a note before it is printed
+- **Collection** — keep the receipts you want; the collection is in the app
+  and nowhere else
+- **Comparison** — the pace against the last run on the same route, matched on
+  shape, distance and where it started
+- **Share** — a PNG with the route's first and last 15% trimmed, the date,
+  time and location left out, and copy that says plainly that this is not
+  anonymity
+- **Text size** — Dynamic Type from the smallest size to the largest, with the
+  layouts reflowing rather than the type shrinking back down
+- **Import from Health** — reads the workouts the system already holds, and
+  their heart rate
+- **Import from Strava** — OAuth in a system sheet, token refresh, and your
+  activities, decoded from their polylines
+- **Motion** — the paper feeds out of the tray with a contact shadow and a run
+  of soft print ticks; the route grows into the receipt; reduce motion removes
+  the travel and keeps everything else
+- **Haptics** — a selection tick when a treatment changes, a landing when the
+  paper comes away, a run of transients while it prints
+- **Liquid Glass** — the action bar on the real system material on iOS 26 and
+  later, and a matched flat bar where it does not exist
 
-| Area | State |
+**Not built yet:**
+
+- [ ] Physical-device testing: haptics, background recording with the screen
+  locked, real GPS, battery
+- [ ] App Store release: listing, privacy nutrition labels, TestFlight
+- [ ] A custom map style in the Strava sense — that needs a vector tile
+  server, and this app has no server
+- [ ] A name. `MILEMARK` is a working title and has not been trademark-checked
+- [ ] HealthKit on a device with a real workout in it
+- [ ] Strava against live credentials
+
+**Known limits:** verification so far covers the **iPhone 17e simulator on
+iOS 26.5** — 62 unit tests and 8 UI tests, all green on CI. Physical-device
+haptics, background recording on a locked device, real GPS accuracy, the
+HealthKit permission flow on a device, and the Strava authorisation sheet are
+**unverified**; the last one does not present in this simulator at all. The
+`ASWebAuthenticationSession` sheet could not be captured, and the Strava
+import has never run against live Strava credentials, because the keys are
+deliberately not in the repository. The app's own text follows Dynamic Type
+from the smallest size to the largest, but the **shared card** — the image
+that leaves the phone — keeps a fixed composition on purpose, because it is
+exported to a fixed canvas.
+
+## Tech stack
+
+| Layer | Technology |
 |---|---|
-| Route recording with Core Location | Working, including pause/resume, auto-pause and background location |
-| Live map | Working, with a quiet muted basemap, an inked route and marks the app draws itself |
-| Map style | Two, in Settings: Milemark's quiet map, or Apple's own |
-| Route archive | Working |
-| Printed receipt with four graphic treatments | Working |
-| Review and share preview | Working |
-| Sharing | Exports a receipt image to the system share sheet |
-| Photo print treatment | Working, in three ways: halftone, dither and poster |
-| Collection of kept receipts | Working |
-| Comparison with the last run on the same route | Working, by pace |
-| Haptics | Implemented, and not yet felt — the simulator cannot make them |
-| Liquid Glass action bar | On iOS 26 and later; a matched flat bar elsewhere |
-| Dynamic Type | Working, from the smallest size to the largest, with the layouts reflowing rather than shrinking |
-| Strava import | Implemented: OAuth, token refresh, activity import. Needs a client ID and secret to connect |
-| Health / heart rate | Implemented: reads workouts and their heart rate. Needs the HealthKit capability on the app's identifier |
+| Platform | iOS 18+ (iPhone and iPad) · iOS 26 features are used where they exist |
+| Language | Swift 6, strict concurrency |
+| UI | SwiftUI |
+| Maps | MapKit — `MKMapView` with `MKStandardMapConfiguration`, and a custom overlay renderer for the route |
+| Location | Core Location, with the Always permission for background recording |
+| Health | HealthKit — read only, never write |
+| Web | AuthenticationServices for the Strava sign-in sheet; the token is kept in the keychain |
+| Storage | JSON in Application Support, plus `UserDefaults` for settings |
+| Tests | XCTest — 62 unit tests, 8 UI tests |
+| Project | XcodeGen — `project.yml` is the source; the `.xcodeproj` is never committed |
+| CI | GitHub Actions on `macos-15` |
 
-## Requirements
+## Project structure
 
-- Xcode 27 or later
-- iOS 18 or later
-- A physical device to record a real run: the simulator has no location feed
+```
+Milemark/
+├── App/
+│   ├── Sources/
+│   │   ├── App/                 # MilemarkApp, RootView, launch arguments
+│   │   ├── Core/
+│   │   │   ├── Design/          # Theme, MapStyle, LiquidGlass, Motion
+│   │   │   ├── Models/          # Run, RoutePoint
+│   │   │   └── Services/        # RunRecorder, RunStore, RouteGeometry, Strava, HealthKit
+│   │   └── Features/            # Archive, Tracking, Review, Receipt, Share, Collection, Import
+│   ├── Tests/                   # 62 unit tests
+│   ├── UITests/                 # 8 UI tests
+│   └── Resources/               # Info.plist, entitlements, privacy manifest, assets
+├── Screenshots/
+│   └── frames/                  # The framed images used in this readme
+├── design/
+│   ├── map-style/               # The figure that explains what a map style is
+│   ├── demo/                    # The demo GIF and its MP4
+│   ├── assets/                  # OpenStreetMap extracts for the sample routes
+│   ├── DIRECTION.md             # The brief, the reference contract, the tokens
+│   ├── CRITIQUE.md              # Two independent design reviews, and what they found
+│   └── ATTRIBUTION.md           # OSM ODbL, and the Unsplash sample photo
+├── project.yml                   # The Xcode project, in XcodeGen form
+└── .github/workflows/ci.yml      # Build, test, and a readme check
+```
 
-## Building
+## Getting started
 
-The Xcode project is generated from `project.yml` with
-[XcodeGen](https://github.com/yonaskolb/XcodeGen), so the project file is never
-committed and there are no merge conflicts in it.
+**Requirements:** Xcode 27 or later, and macOS with the iOS 26.5 simulator
+runtime. A physical iPhone is needed to record a real run, because the
+simulator has no location feed.
 
-```sh
+```bash
+git clone git@github.com:PratikRai0101/Milemark.git
+cd Milemark
 brew install xcodegen
 xcodegen generate
 open Milemark.xcodeproj
 ```
 
-Then run the `Milemark` scheme, or from the command line:
+Then run the `Milemark` scheme. From the command line:
 
-```sh
+```bash
 xcodebuild -project Milemark.xcodeproj -scheme Milemark \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+  -destination 'platform=iOS Simulator,name=iPhone 17e' test
 ```
 
-## Testing
+### Running it on your own iPhone
+
+Free Apple account: Xcode signs the app to your device, but the provisioning
+profile expires after seven days and you re-sign about once a week. A paid
+**Apple Developer Program** membership ($99/year) gives you a year of
+profiles, the App Store, and — because the capability is not available on a
+free account — **HealthKit**.
+
+### The import services
+
+Both are optional. The app works without either, and says so plainly when it
+cannot use them.
+
+| | What it needs | What it costs |
+|---|---|---|
+| **Health** | The HealthKit capability on your app's identifier, and a provisioning profile that includes it | Free, but it needs the $99 Apple Developer Program |
+| **Strava** | A client ID and secret from [strava.com/settings/api](https://www.strava.com/settings/api), with the redirect URI registered as `milemark://strava/callback` | A Strava subscription — $11.99/month or $79.99/year — which is now a prerequisite for creating an API application. No extra API fee on top of it |
+
+The Strava keys are build settings, not values in the repository:
 
 ```sh
-xcodebuild -project Milemark.xcodeproj -scheme Milemark \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
-```
-
-`RouteGeometryTests` covers the parts where a bug would quietly produce a
-wrong number rather than a crash: distance accumulation, sample rejection,
-splits, pace formatting, route normalisation and endpoint trimming.
-
-`RunRecorderTests` covers the recorder's decisions: distance accumulation,
-standing still, implausible jumps, pausing and the auto-pause threshold.
-
-`MilemarkUITests` drives the app end to end — opening a receipt, changing
-the graphic, pulling the paper short of the tear and past it, tearing off,
-and opening the share preview. A screenshot cannot show whether a gesture
-behaves. It also opens the app at the largest text size, where a layout that
-only works at the default size falls apart.
-
-## Importing from other apps
-
-Two services can bring runs into the archive. Both are optional, and both
-say what they need when they cannot be used.
-
-**Health.** The app asks to read workouts and their heart rate, and never
-asks to write. HealthKit's workouts carry no route, so their receipts show
-the numbers without a drawn shape.
-
-Reading Health needs the **HealthKit capability** enabled for the app's
-identifier in the Apple Developer account, and a provisioning profile that
-includes it. Without one, the build will not sign, and the app says the
-HealthKit entitlement is missing.
-
-**Strava.** The reader allows the app in a system sheet, so the app never
-sees a password. The code that comes back is checked against the nonce that
-was sent, and the token is kept in the keychain rather than with the runs.
-
-Strava issues a client ID and secret when an application is created at
-[strava.com/settings/api](https://www.strava.com/settings/api). They are
-build settings, not values in the repository:
-
-```sh
-# in the project settings, or in an .xcconfig
 STRAVA_CLIENT_ID = "your client id"
 STRAVA_CLIENT_SECRET = "your client secret"
 ```
 
-The redirect URI registered with Strava must be `milemark://strava/callback`,
-which is what the app asks for.
+The redirect URI registered with Strava must be `milemark://strava/callback`
+exactly, which is what the app asks for.
 
-A build without those keys is not broken: the import screen says that it has
-no Strava keys and what to add.
+### What it costs to run
 
-Imported runs keep their own numbers and are marked with where they came
-from. Importing the same activity twice does not produce two copies of it.
+**Nothing, and it stays that way.** The app is MIT-licensed, has no server and
+no backend, and makes no paid API calls. MapKit in a native app is free
+beyond your Apple membership. Every run stays on the phone. If you publish
+it, the people who install it pay nothing either.
 
-## Sample activities
+### Quality gates
 
-The archive can load nine sample activities so a receipt can be seen before
-recording a run of your own. Their routes are **real street loops** — genuine
-closed circuits in the OpenStreetMap data bundled in `design/assets`, found by
-`design/make-demo-routes.swift`. They are not recordings of anyone's run, and
-the archive header says the data is demo data.
-
-Two launch arguments help when capturing screenshots or driving the UI:
-
-```sh
-# seed the samples and open the first receipt
-xcrun simctl launch booted app.milemark.app -seedDemoData -openReceipt
-
-# open the recording screen and start a run
-xcrun simctl launch booted app.milemark.app -showRecord -startRecording
-
-# open a screen at a particular text size
-xcrun simctl launch booted app.milemark.app -dynamicTypeSize=accessibility3
-
-# open the import screens
-xcrun simctl launch booted app.milemark.app -openSettings -openImport=health
+```bash
+python3 design/check-readme.py   # every image and link in this file resolves
+xcodebuild test -project Milemark.xcodeproj -scheme Milemark \
+  -destination 'platform=iOS Simulator,name=iPhone 17e' test
 ```
 
-A location can be fed to the simulator while a run is recording:
+### Regenerating the screenshots
 
-```sh
-xcrun simctl location booted set 1.3050,103.8700
+```bash
+bash design/capture-screenshots.sh "iPhone 17e"   # raw captures into .captures/
+node design/render-frames.mjs                    # framed images into Screenshots/frames/
 ```
 
-## Continuous integration
+The capture script **fails** if the recorded track is not in the frame, so a
+blank map can never be published as a capture of a working screen.
 
-GitHub Actions builds the app and runs the tests on every push and pull
-request.
+## Documentation
 
-## Motion and feel
+| Document | What it covers |
+|---|---|
+| [design/DIRECTION.md](design/DIRECTION.md) | The brief, the reference contract, the content, the tokens and the motion rules |
+| [design/CRITIQUE.md](design/CRITIQUE.md) | Two independent design reviews, what they found, and what was done about it |
+| [design/map-style/](design/map-style/) | The figure that explains what a map style is, and why the basemap's ink and the route's ink are separate |
+| [design/ATTRIBUTION.md](design/ATTRIBUTION.md) | OpenStreetMap ODbL, and the Unsplash sample photograph |
+| [design/PROTOTYPE.md](design/PROTOTYPE.md) | The browser prototype this app was built from, and the two reviews that shaped it |
 
-The app is meant to be *felt*, not just looked at.
+## License
 
-| Interaction | What happens | Haptic |
-|---|---|---|
-| The paper feeds out | The sheet travels out of the tray over 1.1 s, with a shadow following the exposed edge | A run of soft transients along the feed, so the receipt is felt as it prints |
-| Tapping a route | The route grows into the receipt | A light impact |
-| Changing the treatment | The picture changes in place, inside a fixed frame | A selection tick |
-| The ASCII map appears | The map is laid down row by row | — |
-| A photograph is printed | The dot screen, dither or poster is printed row by row | — |
-| Tearing off | The paper follows the finger, then falls away | A landing, then a confirmation |
-| Saving | The button becomes a tick | A confirmation |
-
-Two rules shape it. Haptics are never on every tap — that is the motion
-equivalent of every button being loud. And a long operation is felt as it
-happens rather than announced at the end.
-
-The action bar is on **Liquid Glass** where the system provides it (iOS 26 and
-later), and on a matched flat bar where it does not, so the app still supports
-iOS 18 without the bar feeling broken.
-
-![The receipt's action bar on Liquid Glass](Screenshots/glass-action-bar.png)
-
-*The action bar on iOS 26. The paper's torn edge shows through the glass, which
-is the system material rather than a flat panel behind it.*
-
-## Text size
-
-The type is built from text styles, so it follows the reader's Dynamic Type
-setting from the smallest size to the largest. At the accessibility sizes the
-layouts give way rather than the type shrinking back down:
-
-- The receipt's statistics become two columns instead of three.
-- The title wraps instead of being cut off, and the run type and the date
-  drop to their own lines.
-- The action bar becomes a column, and the glass takes the shape of what is
-  inside it.
-- The archive's cards become one across, because a narrow card cannot hold
-  the text inside it.
-- Rows of figures become columns, so their labels keep their words whole.
-
-One thing deliberately does not scale: the **shared card**. It is exported as
-an image with a fixed canvas, so its composition is held, and the preview
-shows exactly what will be shared.
-
-![The receipt at the largest text size](Screenshots/frames/09-09-receipt-large-text.png)
-
-*The same receipt at `accessibility3`. The title wraps, the statistics become
-two columns, and each action gets a row of its own so that no word is cut
-off.*
-
-## The receipt
-
-The paper comes out of a metal tray rail and stays in one place while the
-graphic changes inside it. Four treatments are available: the route trace, an
-ASCII map printed as a field of characters, a pace chart per kilometre, and a
-photograph treated like a halftone print.
-
-The tear is the interaction people describe. The grip at the end of the paper
-says what to do: it only offers the pull once the receipt has been scrolled to
-the end, because a pull in the middle of a long receipt is a scroll. The paper
-then follows the finger, and released short of the threshold it springs back
-into the slot. The **Tear off** button in the action bar does the same thing
-without the gesture.
-
-A photograph can be printed three ways — a dot screen, an ordered dither, and
-a hard two-tone poster. Each is laid down row by row, the way a plotter
-prints, and the treatment is chosen from the caption strip under the picture.
-
-A receipt also compares itself with the last time the same route was run. The
-comparison is made on the shape of the route rather than on its samples, so two
-laps of the same loop match even when one of them has a lap more.
-
-## The reference, and what is deliberately different
-
-This app was inspired by a running app that prints a receipt for each run. The
-inspiration was the idea — a run recorded as a physical printout — and the
-motion of paper feeding out of a machine.
-
-The receipt here is **not a copy of it**, and the differences are deliberate:
-
-| | The reference | Here |
-|---|---|---|
-| Mark | A pair of running figures | A mile marker with a route running through it |
-| Masthead | The product's own name | The MILEMARK wordmark |
-| Footer | A centred stamp, a slogan and a fine-print line | A left-aligned `LOGGED …` with `PRINTED ON THIS PHONE` opposite it |
-| Slogan | "You kept the streak going." | "A route, printed." |
-| Paper edge | A regular zigzag perforation | A torn edge with shallow fibres |
-| Where the paper comes from | A black slot | A metal tray rail |
-| The picture | A badge top-left and a circular control bottom-right | A caption strip along the bottom edge |
-| Statistics | Three across, one below | Six in a three-by-two grid |
-| Extra | — | A comparison with the last run on the same route |
-
-No artwork, name or copy is taken from the reference app. The ideas taken are
-generic ones: a receipt is a document, and a document about a run can be
-printed.
-
-## Design
-
-The visual direction is documented in [`design/`](design/):
-
-- [`design/map-style/`](design/map-style/) — a figure that explains what a map
-  style is: a map is a stack of layers, and a style is a decision about which
-  of them are fitted and how much ink each one gets. Open
-  `design/map-style/map-style.html` and drag across it to set the basemap's
-  ink.
-- [`design/DIRECTION.md`](design/DIRECTION.md) — the brief, the reference
-  contract, the content, the tokens and the motion rules.
-- [`design/CRITIQUE.md`](design/CRITIQUE.md) — two independent design reviews,
-  the fixes they asked for, and the warnings that were deliberately accepted.
-- [`design/receipt-motion.prototype.html`](design/receipt-motion.prototype.html)
-  — the clickable prototype the app was built from.
-- [`design/PROTOTYPE.md`](design/PROTOTYPE.md) — how to open and exercise the
-  prototype.
-
-`MILEMARK` is a working title. It is not a settled brand, and it is not
-trademark-checked.
-
-## How recording works
-
-Milemark records location with Core Location and draws the route with MapKit.
-Neither costs money: Apple's native map display has no usage charge, and
-recording a route does not need a routing or directions service.
-
-The map is drawn with MapKit using a **muted** standard style — no points of
-interest, no traffic, no rotation — so the recorded track and the runner are
-the only saturated things on screen. The route is drawn by MapKit itself; a
-SwiftUI filter applied to the map breaks its metal-rendered tiles.
-
-The recorder is deliberately strict, because a plausible-looking route that is
-wrong is worse than no route at all:
-
-- Fixes older than ten seconds, or with an accuracy worse than 40 m, are
-  discarded.
-- A jump that would imply running faster than 12 m/s is discarded.
-- Movement smaller than 40 cm between samples is treated as noise, so standing
-  still does not add distance.
-- Pausing stops the clock and the distance. Resuming starts a new segment, so
-  the route never draws a false straight line across the gap, and the distance
-  covered during the pause is never counted.
-- If the runner stops for more than twelve seconds, the run pauses itself.
-  The test is deliberately slow, so a pause at traffic lights is not mistaken
-  for the end of the run.
-
-The clock is worked out from the dates rather than from a timer, so **a run
-keeps recording with the phone locked** and in a pocket. The moving time is
-the span of the recorded samples, so a pause is not counted against the pace.
-
-Kilometre splits interpolate the moment each boundary was crossed, rather
-than taking the time of the first sample past it, so a route sampled every ten
-metres does not report every split ten metres slow.
-
-None of this makes a route guaranteed accurate. It makes the app refuse to
-invent distance when the signal is poor.
-
-## Privacy
-
-Runs are stored locally on the device. There is no account and no server.
-
-If a run cannot be written to disk, the app says so and **keeps the
-recording** rather than losing it quietly. A runs file that cannot be read is
-moved aside rather than overwritten.
-
-The share preview leaves out the recorded date, time and location, and can trim
-the first and last 15% of the route. That is not anonymity: a distinctive route,
-a run title or a personal note can still identify a place or a person. The app
-says so rather than implying a guarantee it cannot make.
-
-**Importing is the one place the app talks to someone else.** Both services
-are opt-in and are only contacted when the reader asks for them:
-
-- **Health.** The app asks to read and never asks to write. It reads the
-  workouts the system already holds, and it does not read anything else.
-- **Strava.** The reader allows the app in a system sheet, so the app never
-  sees a password. The access token is kept in the keychain, not in the runs
-  file, and it can be forgotten from the app at any time.
-
-Nothing is uploaded anywhere else. There is still no account and no server.
-
-## Licence
-
-MIT. See [LICENSE](LICENSE).
-
-Map data is drawn by MapKit at runtime. Any bundled or derived geographic data
-in `design/` carries its own OpenStreetMap ODbL attribution.
+[MIT](LICENSE) © Pratik Rai
