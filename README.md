@@ -77,7 +77,8 @@ surfaces are still provisional.
 | Area | State |
 |---|---|
 | Route recording with Core Location | Working, including pause/resume, auto-pause and background location |
-| Live map | Working, with a quiet muted basemap and a vivid track |
+| Live map | Working, with a quiet muted basemap, an inked route and marks the app draws itself |
+| Map style | Two, in Settings: Milemark's quiet map, or Apple's own |
 | Route archive | Working |
 | Printed receipt with four graphic treatments | Working |
 | Review and share preview | Working |
@@ -310,6 +311,11 @@ printed.
 
 The visual direction is documented in [`design/`](design/):
 
+- [`design/map-style/`](design/map-style/) — a figure that explains what a map
+  style is: a map is a stack of layers, and a style is a decision about which
+  of them are fitted and how much ink each one gets. Open
+  `design/map-style/map-style.html` and drag across it to set the basemap's
+  ink.
 - [`design/DIRECTION.md`](design/DIRECTION.md) — the brief, the reference
   contract, the content, the tokens and the motion rules.
 - [`design/CRITIQUE.md`](design/CRITIQUE.md) — two independent design reviews,
