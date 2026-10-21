@@ -28,14 +28,23 @@ FPS = 8
 COLOURS = 96
 
 
-def frame_device(screen: Image.Image) -> Image.Image:
-    """Puts a screen inside the drawn iPhone."""
-    return device.draw_device(
-        screen,
-        background=device.GITHUB_DARK,
-        island=True,
-        screen_radius=device.DEMO_SCREEN_RADIUS,
-    )
+def make_framer():
+    """Builds the device once, and returns something that fills it."""
+    state = {}
+
+    def frame_device(screen: Image.Image) -> Image.Image:
+        width, height = screen.size
+        if "frame" not in state:
+            frame, mask, off = device.frame_parts(width, height)
+            state["frame"] = frame
+            state["mask"] = mask
+            state["off"] = off
+        composed = state["frame"].copy()
+        composed.paste(screen.convert("RGB"), state["off"], state["mask"])
+        device.draw_island(composed, (width, height), state["off"])
+        return composed
+
+    return frame_device
 
 
 def main() -> int:
@@ -64,9 +73,9 @@ def main() -> int:
             print("The video had no frames in it.", file=sys.stderr)
             return 1
 
+        frame_device = make_framer()
         for shot in shots:
-            device = frame_device(Image.open(shot))
-            device.save(shot)
+            frame_device(Image.open(shot)).save(shot)
 
         subprocess.run(
             [

@@ -38,9 +38,9 @@ scrolled to the end, because a pull in the middle of a long receipt is a
 scroll.
 
 Every screenshot below is a real capture from the **iPhone 17e simulator on
-iOS 26.5**. The device — its metal edge, its black bezel, its Dynamic
-Island — is drawn around the capture; the app pixels inside it are
-untouched. See [the note on verification](#known-limits).
+iOS 26.5**. The iPhone 17e is drawn around the capture — its titanium
+band, its black glass, its corner radius — and the app pixels inside it
+are copied through untouched. See [the note on verification](#known-limits).
 
 ## Why Milemark?
 
@@ -300,15 +300,17 @@ bash design/capture-screenshots.sh "iPhone 17e"   # raw captures into .captures/
 python3 design/render-frames.py                   # framed images into Screenshots/frames/
 ```
 
-The frames are an iPhone drawn around each capture — a metal edge, a black
-bezel, the Dynamic Island and the home indicator, all of which the
-simulator records but never draws. There is no caption in the image; the
-readme writes the caption underneath it. The frames are then shrunk to a
-128-colour palette, which is indistinguishable on a page of greys and one
-third of the size.
+The frames are an iPhone drawn around each capture: a titanium band with a
+sheen across the upper left, the black glass behind the display, and the
+55 pt corner radius a real screen curves into the body with. The simulator
+records the app's screen and not the phone around it, so the device is
+drawn. There is no caption in the image; the readme writes the caption
+underneath it. The frames are then shrunk to a 128-colour palette, which is
+indistinguishable on a page of greys and one third of the size.
 
 The demo is drawn the same way, on GitHub's dark canvas, so that it sits on
-the page rather than on a white card.
+the page rather than on a white card. Its Dynamic Island is drawn too, since
+the simulator never draws that either.
 
 The capture script **fails** if the recorded track is not in the frame, so a
 blank map can never be published as a capture of a working screen.
