@@ -468,6 +468,10 @@ struct ReceiptPaper: View {
                 .padding(.vertical, 1)
             }
             .scrollIndicators(.hidden)
+            // The row is as tall as the chips in it. A scroll view will
+            // otherwise take all the height left over in the strip, and
+            // push the chips out of the plate.
+            .frame(height: 26)
         }
     }
 
@@ -505,7 +509,7 @@ struct ReceiptPaper: View {
                 Rectangle().fill(Theme.paperSecondary.opacity(0.18)).frame(height: 1)
             }
         }
-        .frame(height: 250)
+        .frame(minHeight: 250)
         .background(Theme.graphic)
         .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
         .padding(.vertical, 15)
