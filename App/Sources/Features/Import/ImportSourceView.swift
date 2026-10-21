@@ -16,6 +16,7 @@ struct ImportSourceView: View {
     @State private var model: ImportViewModel?
     @State private var selected: Set<UUID> = []
     @State private var status: String?
+    @State private var isConnecting = false
 
     var body: some View {
         Group {
@@ -51,6 +52,22 @@ struct ImportSourceView: View {
                 systemImage: "exclamationmark.triangle",
                 description: Text(reason)
             )
+        } else if source == .strava && !isConnected {
+            // The browser does not open on its own. A Strava sign-in sheet
+            // appearing the moment a screen is opened is a surprise, and the
+            // reader is better off deciding when it happens.
+            ContentUnavailableView {
+                Label("Connect to \(source.title)", systemImage: "figure.run.circle")
+            } description: {
+                Text("Milemark asks \(source.title) for your activities. You will be taken to \(source.title) to allow it, and your password is never seen by this app.")
+            } actions: {
+                Button("Connect to \(source.title)") {
+                    Task { await connect() }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isConnecting)
+                .accessibilityIdentifier("connect-strava")
+            }
         } else if model.isLoading {
             ProgressView("Looking for runs…")
         } else if model.candidates.isEmpty {
@@ -72,6 +89,27 @@ struct ImportSourceView: View {
                 }
             }
         }
+    }
+
+    /// Whether the reader has already allowed the app.
+    private var isConnected: Bool {
+        switch strava.state {
+        case .connected: true
+        default: false
+        }
+    }
+
+    /// Opens the service's own sign-in sheet.
+    private func connect() async {
+        isConnecting = true
+        defer { isConnecting = false }
+        switch source {
+        case .strava:
+            await strava.connect(presenter: presenter)
+        case .health:
+            await health.requestAuthorisation()
+        }
+        await model?.load()
     }
 
     private func row(for candidate: ImportCandidate, model: ImportViewModel) -> some View {
@@ -134,11 +172,8 @@ struct ImportSourceView: View {
 
         switch source {
         case .strava:
-            // The sheet needs a window to sit in, so the connection is made
-            // from a view that is on screen.
-            if case .signedOut = strava.state {
-                await strava.connect(presenter: presenter)
-            }
+            // Nothing is opened yet. The sheet waits for the reader to ask.
+            break
         case .health:
             await health.requestAuthorisation()
         }
