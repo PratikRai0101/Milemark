@@ -29,7 +29,7 @@
 
 <p align="center">
   <a href="design/demo/milemark-demo.mp4"><strong>Watch the 28-second demo</strong></a><br />
-  <sub>One continuous take · Normal speed · MP4 under 200 KB</sub>
+  <sub>Native iOS · One continuous take · Normal speed · MP4 under 200 KB</sub>
 </p>
 
 Open a run, watch the receipt feed out of the tray, then pull the paper off. The
@@ -75,51 +75,45 @@ something you look at, keep, and hand over.
 <table>
   <tr>
     <td width="50%">
-      <img width="300" src="Screenshots/frames/01-archive.png" alt="The archive: nine runs, each as its own route silhouette with a date and a distance" />
+      <img src="Screenshots/frames/01-archive.png" alt="The archive: nine runs, each as its own route silhouette with a date and a distance" />
       <br /><sub><strong>Archive</strong> — every route as its own shape, with its date and distance.</sub>
     </td>
     <td width="50%">
-      <img width="300" src="Screenshots/frames/03-receipt-ascii.png" alt="The same route printed as a field of the letters R, U and N" />
+      <img src="Screenshots/frames/03-receipt-ascii.png" alt="The same route printed as a field of the letters R, U and N" />
       <br /><sub><strong>ASCII</strong> — the same route, printed row by row as a field of characters.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img width="300" src="Screenshots/frames/04-receipt-pace.png" alt="A chart of pace for each kilometre of the run, with the fastest kilometre marked" />
+      <img src="Screenshots/frames/04-receipt-pace.png" alt="A chart of pace for each kilometre of the run, with the fastest kilometre marked" />
       <br /><sub><strong>Pace</strong> — a chart per kilometre that you can scrub, with the fastest one marked.</sub>
     </td>
     <td width="50%">
-      <img width="300" src="Screenshots/frames/08-photo.png" alt="A photograph printed as a hard two-tone poster of dots" />
+      <img src="Screenshots/frames/08-photo.png" alt="A photograph printed as a hard two-tone poster of dots" />
       <br /><sub><strong>Photo</strong> — a photograph printed three ways: halftone, ordered dither, poster.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img width="300" src="Screenshots/frames/07-tracking.png" alt="The recording screen: a quiet muted map with a vivid orange track and the distance counting up" />
+      <img src="Screenshots/frames/07-tracking.png" alt="The recording screen: a quiet muted map with a vivid orange track and the distance counting up" />
       <br /><sub><strong>Recording</strong> — a quiet map, a vivid track, and the paper that will come out of it.</sub>
     </td>
     <td width="50%">
-      <img width="300" src="Screenshots/frames/05-share.png" alt="The share preview: the route with its first and last fifteen per cent trimmed, and the privacy copy beneath it" />
+      <img src="Screenshots/frames/05-share.png" alt="The share preview: the route with its first and last fifteen per cent trimmed, and the privacy copy beneath it" />
       <br /><sub><strong>Share</strong> — the image that leaves the phone, with the route's ends trimmed.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img width="300" src="Screenshots/frames/06-kept.png" alt="The collection of kept receipts" />
+      <img src="Screenshots/frames/06-kept.png" alt="The collection of kept receipts" />
       <br /><sub><strong>Kept</strong> — the receipts you decided to keep.</sub>
     </td>
     <td width="50%">
-      <img width="300" src="Screenshots/frames/09-receipt-large-text.png" alt="The same receipt at the largest text size, with the title wrapped, the statistics in two columns and each action on a row of its own" />
+      <img src="Screenshots/frames/09-receipt-large-text.png" alt="The same receipt at the largest text size, with the title wrapped, the statistics in two columns and each action on a row of its own" />
       <br /><sub><strong>Large text</strong> — the same receipt at <code>accessibility3</code>. The layout gives way rather than the type shrinking back down.</sub>
     </td>
   </tr>
 </table>
-
-<p align="center">
-  <img src="Screenshots/frames/11-import.png" width="300" alt="The Strava import screen: a Connect to Strava button, and the note that your password is never seen by the app" />
-  <br />
-  <sub><strong>Import</strong> — bring in runs recorded by another app. The browser does not open on its own; the app asks first.</sub>
-</p>
 
 ## What's built
 
@@ -267,6 +261,12 @@ cannot use them.
 |---|---|---|
 | **Health** | The HealthKit capability on your app's identifier, and a provisioning profile that includes it | Free, but it needs the $99 Apple Developer Program |
 | **Strava** | A client ID and secret from [strava.com/settings/api](https://www.strava.com/settings/api), with the redirect URI registered as `milemark://strava/callback` | A Strava subscription — $11.99/month or $79.99/year — which is now a prerequisite for creating an API application. No extra API fee on top of it |
+
+<p align="center">
+  <img src="Screenshots/frames/11-import.png" width="300" alt="The Strava import screen: a Connect to Strava button, and the note that your password is never seen by the app" />
+  <br />
+  <sub><strong>Import</strong> — bring in runs recorded by another app. The browser does not open on its own; the app asks first.</sub>
+</p>
 
 The Strava keys are build settings, not values in the repository:
 

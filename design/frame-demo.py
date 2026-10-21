@@ -30,7 +30,12 @@ COLOURS = 96
 
 def frame_device(screen: Image.Image) -> Image.Image:
     """Puts a screen inside the drawn iPhone."""
-    return device.draw_device(screen, background=device.GITHUB_DARK)
+    return device.draw_device(
+        screen,
+        background=device.GITHUB_DARK,
+        island=True,
+        screen_radius=device.DEMO_SCREEN_RADIUS,
+    )
 
 
 def main() -> int:
