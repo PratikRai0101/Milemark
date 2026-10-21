@@ -4,12 +4,14 @@ import SwiftUI
 struct MilemarkApp: App {
     @State private var store = RunStore()
     @State private var recorder = RunRecorder()
+    @State private var preferences = Preferences()
 
     var body: some Scene {
         WindowGroup {
             root
                 .environment(store)
                 .environment(recorder)
+                .environment(preferences)
                 .tint(Theme.ink)
         }
     }

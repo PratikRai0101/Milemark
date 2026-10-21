@@ -7,6 +7,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(RunStore.self) private var store
     @Environment(RunRecorder.self) private var recorder
+    @Environment(Preferences.self) private var preferences
     @Environment(\.dismiss) private var dismiss
 
     @State private var showsDeleteConfirmation = false
@@ -22,6 +23,27 @@ struct SettingsView: View {
                 Text("On this device")
             } footer: {
                 Text("Runs are saved locally on this iPhone. There is no account and no server.")
+            }
+
+            Section {
+                Picker("Map style", selection: Binding(
+                    get: { preferences.mapStyle },
+                    set: { preferences.mapStyle = $0 }
+                )) {
+                    ForEach(MapStyle.allCases) { style in
+                        Text(style.title).tag(style)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("map-style-picker")
+
+                Text(preferences.mapStyle.explanation)
+                    .font(Theme.Font.footnote)
+                    .foregroundStyle(Theme.secondary)
+            } header: {
+                Text("Map")
+            } footer: {
+                Text("Milemark holds Apple's map back and draws the route over it. Standard leaves the map as Apple draws it.")
             }
 
             Section {

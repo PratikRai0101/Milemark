@@ -11,6 +11,7 @@ import SwiftUI
 /// by accident.
 struct TrackingView: View {
     @Environment(RunStore.self) private var store
+    @Environment(Preferences.self) private var preferences
     @Environment(RunRecorder.self) private var recorder
     @Environment(\.scenePhase) private var scenePhase
 
@@ -111,6 +112,7 @@ struct TrackingView: View {
             breaks: recorder.segmentBreaks,
             currentCoordinate: recorder.currentCoordinate,
             followsRunner: followsRunner,
+            style: preferences.mapStyle,
             onUserInteraction: { followsRunner = false }
         )
         .overlay(alignment: .topLeading) {
