@@ -28,7 +28,7 @@
 </p>
 
 <p align="center">
-  <a href="design/demo/milemark-demo.mp4"><strong>Watch the 38-second demo</strong></a><br />
+  <a href="design/demo/milemark-demo.mp4"><strong>Watch the 28-second demo</strong></a><br />
   <sub>One continuous take · Normal speed · MP4 under 200 KB</sub>
 </p>
 
@@ -38,8 +38,9 @@ scrolled to the end, because a pull in the middle of a long receipt is a
 scroll.
 
 Every screenshot below is a real capture from the **iPhone 17e simulator on
-iOS 26.5**. The device frame is drawn around the capture; the app pixels
-inside it are untouched. See [the note on verification](#known-limits).
+iOS 26.5**. The device — its metal edge, its black bezel, its Dynamic
+Island — is drawn around the capture; the app pixels inside it are
+untouched. See [the note on verification](#known-limits).
 
 ## Why Milemark?
 

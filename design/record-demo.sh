@@ -59,13 +59,13 @@ if [ ! -f "$MOV" ]; then
   exit 1
 fi
 
-# The app is torn down when the test ends, so the tail of the video is the
-# home screen and is cut off.
-ffmpeg -y -v error -ss 10 -to 49 -i "$MOV" -c:v libx264 -pix_fmt yuv420p -crf 30 \
+# The recording opens on the home screen while the test builds and launches,
+# and ends with the app being torn down. The demo is the part in between:
+# the app is already open, the receipt prints, and the paper comes away.
+ffmpeg -y -v error -ss 22 -to 48 -i "$MOV" -c:v libx264 -pix_fmt yuv420p -crf 30 \
   -vf "scale=390:-2" -movflags +faststart -an "$MOV"
 
-ffmpeg -y -v error -ss 10 -to 49 -i "$MOV" -vf \
-  "fps=12,scale=320:-2:flags=lanczos,split[a][b];[a]palettegen=max_colors=192[p];[b][p]paletteuse=dither=bayer:bayer_scale=3" \
-  -loop 0 "$GIF"
+# The device is drawn around the video, the way the still frames are.
+python3 design/frame-demo.py "$MOV" "$GIF"
 
 ls -la "$MOV" "$GIF"

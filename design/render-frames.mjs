@@ -35,35 +35,39 @@ const frames = [
   { file: '11-import.png' },
 ];
 
-// The device, in the page's own units. The screenshot is 900 px wide, so the
-// bezel is a thin edge rather than a slab of black.
-const BEZEL = 9;
-const RADIUS_OUTER = 20;
-const RADIUS_SCREEN = 15;
-
 const html = `<!doctype html>
 <html><head><meta charset="utf-8"><style>
   * { box-sizing: border-box; }
   body { margin: 0; background: #0d1117; }
-  .device {
+
+  /* The device is drawn as three rings, from the outside in: the metal edge
+     of the phone, the chamfer where the metal turns over, and the black
+     bezel around the screen. Without the first two it reads as a phone in a
+     black case rather than as a phone. */
+  .phone {
     display: inline-block;
-    padding: ${BEZEL}px;
-    background: #05060a;
-    border-radius: ${RADIUS_OUTER}px;
-    /* The hairline is the metal edge of the phone. It is a border rather
-       than a shadow, because a shadow on a dark page is just a black blob,
-       and because a border is inside the element's box, so it survives the
-       capture. */
-    border: 2px solid #4a4f58;
+    padding: 0.6px;
+    border-radius: 15px;
+    background: linear-gradient(160deg, #f0f0f4 0%, #c9c7c3 40%, #ececee 100%);
   }
-  .device img {
+  .chamfer {
+    padding: 4px;
+    border-radius: 14.4px;
+    background: linear-gradient(155deg, #b6b4b0 0%, #6f6d69 45%, #cfcdc9 100%);
+  }
+  .bezel {
+    padding: 11px;
+    border-radius: 11px;
+    background: #08090a;
+  }
+  .bezel img {
     display: block;
     width: 300px;
-    border-radius: ${RADIUS_SCREEN}px;
+    border-radius: 1px;
   }
 </style></head>
 <body>
-${frames.map((f, i) => `<div class="device" id="f${i}"><img src="file://${path.join(shots, f.file)}"></div>`).join('\n')}
+${frames.map((f, i) => `<div class="phone" id="f${i}"><div class="chamfer"><div class="bezel"><img src="file://${path.join(shots, f.file)}"></div></div></div>`).join('\n')}
 </body></html>`;
 
 const missing = frames.filter((frame) => !fs.existsSync(path.join(shots, frame.file)));
