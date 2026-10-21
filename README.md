@@ -297,13 +297,18 @@ xcodebuild test -project Milemark.xcodeproj -scheme Milemark \
 
 ```bash
 bash design/capture-screenshots.sh "iPhone 17e"   # raw captures into .captures/
-node design/render-frames.mjs                    # framed images into Screenshots/frames/
+python3 design/render-frames.py                   # framed images into Screenshots/frames/
 ```
 
-The frames are a thin bezel drawn tight to the screen, with no caption in
-the image — the readme writes the caption underneath it. They are then
-shrunk to a 128-colour palette, which is indistinguishable on a page of
-greys and one third of the size.
+The frames are an iPhone drawn around each capture — a metal edge, a black
+bezel, the Dynamic Island and the home indicator, all of which the
+simulator records but never draws. There is no caption in the image; the
+readme writes the caption underneath it. The frames are then shrunk to a
+128-colour palette, which is indistinguishable on a page of greys and one
+third of the size.
+
+The demo is drawn the same way, on GitHub's dark canvas, so that it sits on
+the page rather than on a white card.
 
 The capture script **fails** if the recorded track is not in the frame, so a
 blank map can never be published as a capture of a working screen.
