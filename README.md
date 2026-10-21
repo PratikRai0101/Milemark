@@ -66,7 +66,7 @@ something you look at, keep, and hand over.
 ## Screens
 
 <p align="center">
-  <img src="Screenshots/frames/02-02-receipt-route.png" width="300" alt="The printed receipt: a route drawn on thermal paper, with distance, pace, heart rate, duration, elevation and a comparison with the last run on the same route" />
+  <img src="Screenshots/frames/02-receipt-route.png" width="300" alt="The printed receipt: a route drawn on thermal paper, with distance, pace, heart rate, duration, elevation and a comparison with the last run on the same route" />
   <br />
   <sub><strong>The receipt</strong> — the paper comes out of a metal tray, the route is drawn on it, and the numbers are set in a monospaced face beneath.</sub>
 </p>
@@ -74,48 +74,48 @@ something you look at, keep, and hand over.
 <table>
   <tr>
     <td width="50%">
-      <img width="280" src="Screenshots/frames/01-01-archive.png" alt="The archive: nine runs, each as its own route silhouette with a date and a distance" />
+      <img width="300" src="Screenshots/frames/01-archive.png" alt="The archive: nine runs, each as its own route silhouette with a date and a distance" />
       <br /><sub><strong>Archive</strong> — every route as its own shape, with its date and distance.</sub>
     </td>
     <td width="50%">
-      <img width="280" src="Screenshots/frames/03-03-receipt-ascii.png" alt="The same route printed as a field of the letters R, U and N" />
+      <img width="300" src="Screenshots/frames/03-receipt-ascii.png" alt="The same route printed as a field of the letters R, U and N" />
       <br /><sub><strong>ASCII</strong> — the same route, printed row by row as a field of characters.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img width="280" src="Screenshots/frames/04-04-receipt-pace.png" alt="A chart of pace for each kilometre of the run, with the fastest kilometre marked" />
+      <img width="300" src="Screenshots/frames/04-receipt-pace.png" alt="A chart of pace for each kilometre of the run, with the fastest kilometre marked" />
       <br /><sub><strong>Pace</strong> — a chart per kilometre that you can scrub, with the fastest one marked.</sub>
     </td>
     <td width="50%">
-      <img width="280" src="Screenshots/frames/05-08-photo.png" alt="A photograph printed as a hard two-tone poster of dots" />
+      <img width="300" src="Screenshots/frames/08-photo.png" alt="A photograph printed as a hard two-tone poster of dots" />
       <br /><sub><strong>Photo</strong> — a photograph printed three ways: halftone, ordered dither, poster.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img width="280" src="Screenshots/frames/07-07-tracking.png" alt="The recording screen: a quiet muted map with a vivid orange track and the distance counting up" />
+      <img width="300" src="Screenshots/frames/07-tracking.png" alt="The recording screen: a quiet muted map with a vivid orange track and the distance counting up" />
       <br /><sub><strong>Recording</strong> — a quiet map, a vivid track, and the paper that will come out of it.</sub>
     </td>
     <td width="50%">
-      <img width="280" src="Screenshots/frames/06-05-share.png" alt="The share preview: the route with its first and last fifteen per cent trimmed, and the privacy copy beneath it" />
+      <img width="300" src="Screenshots/frames/05-share.png" alt="The share preview: the route with its first and last fifteen per cent trimmed, and the privacy copy beneath it" />
       <br /><sub><strong>Share</strong> — the image that leaves the phone, with the route's ends trimmed.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img width="280" src="Screenshots/frames/08-06-kept.png" alt="The collection of kept receipts" />
+      <img width="300" src="Screenshots/frames/06-kept.png" alt="The collection of kept receipts" />
       <br /><sub><strong>Kept</strong> — the receipts you decided to keep.</sub>
     </td>
     <td width="50%">
-      <img width="280" src="Screenshots/frames/09-09-receipt-large-text.png" alt="The same receipt at the largest text size, with the title wrapped, the statistics in two columns and each action on a row of its own" />
+      <img width="300" src="Screenshots/frames/09-receipt-large-text.png" alt="The same receipt at the largest text size, with the title wrapped, the statistics in two columns and each action on a row of its own" />
       <br /><sub><strong>Large text</strong> — the same receipt at <code>accessibility3</code>. The layout gives way rather than the type shrinking back down.</sub>
     </td>
   </tr>
 </table>
 
 <p align="center">
-  <img src="Screenshots/frames/11-11-import.png" width="300" alt="The Strava import screen: a Connect to Strava button, and the note that your password is never seen by the app" />
+  <img src="Screenshots/frames/11-import.png" width="300" alt="The Strava import screen: a Connect to Strava button, and the note that your password is never seen by the app" />
   <br />
   <sub><strong>Import</strong> — bring in runs recorded by another app. The browser does not open on its own; the app asks first.</sub>
 </p>
@@ -298,6 +298,11 @@ xcodebuild test -project Milemark.xcodeproj -scheme Milemark \
 bash design/capture-screenshots.sh "iPhone 17e"   # raw captures into .captures/
 node design/render-frames.mjs                    # framed images into Screenshots/frames/
 ```
+
+The frames are a thin bezel drawn tight to the screen, with no caption in
+the image — the readme writes the caption underneath it. They are then
+shrunk to a 128-colour palette, which is indistinguishable on a page of
+greys and one third of the size.
 
 The capture script **fails** if the recorded track is not in the frame, so a
 blank map can never be published as a capture of a working screen.
